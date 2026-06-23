@@ -439,8 +439,8 @@ function renderVoucherTab(data) {
         data:{
           labels:['A37 (100K)','A57 (200K)','S26 (300K)'],
           datasets:[
-            { label:'Terpakai', data:[ks.a37.voucherPakai,ks.a57.voucherPakai,ks.s26.voucherPakai], backgroundColor:[''#1428A099'',''#F59E0B99'',''#8B5CF699''], borderRadius:4 },
-            { label:'Sisa', data:[ks.a37.voucherTersedia-ks.a37.voucherPakai, ks.a57.voucherTersedia-ks.a57.voucherPakai, ks.s26.voucherTersedia-ks.s26.voucherPakai], backgroundColor:[''#1428A022'',''#F59E0B22'',''#8B5CF622''], borderRadius:4 },
+            { label:'Terpakai', data:[ks.a37.voucherPakai,ks.a57.voucherPakai,ks.s26.voucherPakai], backgroundColor:['#1428A099','#F59E0B99','#8B5CF699'], borderRadius:4 },
+            { label:'Sisa', data:[ks.a37.voucherTersedia-ks.a37.voucherPakai, ks.a57.voucherTersedia-ks.a57.voucherPakai, ks.s26.voucherTersedia-ks.s26.voucherPakai], backgroundColor:['#1428A022','#F59E0B22','#8B5CF622'], borderRadius:4 },
           ],
         },
         options:{ ...chartOpts({scales:true,stacked:true,legend:true}), aspectRatio:undefined },

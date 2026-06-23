@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SBD Dashboard — JABO B</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ══ UPLOAD MODAL ══ -->
+<div id="upload-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+  <div class="modal-box upload-modal-box">
+    <button class="modal-close" id="btn-close-upload">✕</button>
+    <h2 class="modal-title">Upload Data SBD</h2>
+    <p class="modal-subtitle">Drag &amp; drop file <strong>.xlsx</strong> atau klik untuk pilih</p>
+    <div id="upload-zone" class="upload-zone" role="button" tabindex="0">
+      <input type="file" id="file-input" accept=".xlsx" hidden />
+      <div class="upload-icon">⬆</div>
+      <span class="upload-hint">SBD_SAMSUNG_*.xlsx · Sheet "Skema 3"</span>
+    </div>
+    <div id="upload-preview" class="upload-preview" style="display:none"></div>
+    <p id="upload-msg" class="upload-msg"></p>
+    <div class="upload-actions">
+      <button id="btn-submit" class="btn btn-primary" disabled>Submit ke Server</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STORE DETAIL MODAL ══ -->
+<div id="store-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+  <div class="modal-box store-modal-box">
+    <button class="modal-close" id="btn-close-store">✕</button>
+    <div id="store-modal-content"></div>
+  </div>
+</div>
+
+<!-- ══ ADMIN MODAL ══ -->
+<div id="admin-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+  <div class="modal-box admin-modal-box">
+    <button class="modal-close" id="btn-close-admin">✕</button>
+    <div class="admin-modal-header">
+      <div class="admin-modal-icon">⚙</div>
+      <div>
+        <h2 class="modal-title">Pengaturan Header</h2>
+        <p class="modal-subtitle">Ubah tampilan hero section dashboard</p>
+      </div>
+    </div>
+    <div class="admin-form">
+      <div class="admin-section-label">Topbar</div>
+      <div class="admin-field">
+        <label class="admin-label" for="adm-region">Nama Region / Organisasi</label>
+        <input type="text" id="adm-region" class="admin-input" placeholder="ERAJAYA DIGITAL · REGION 5" />
+      </div>
+      <div class="admin-section-label">Hero Section</div>
+      <div class="admin-field">
+        <label class="admin-label" for="adm-brand">Brand Label</label>
+        <input type="text" id="adm-brand" class="admin-input" placeholder="SAMSUNG" />
+      </div>
+      <div class="admin-field">
+        <label class="admin-label" for="adm-title">Judul Utama</label>
+        <input type="text" id="adm-title" class="admin-input" placeholder="SUPER BRAND DAY" />
+      </div>
+      <div class="admin-field">
+        <label class="admin-label" for="adm-subtitle">Subjudul</label>
+        <input type="text" id="adm-subtitle" class="admin-input" placeholder="Monitoring Dashboard · Erafone & Samsung Store" />
+      </div>
+      <div class="admin-field">
+        <label class="admin-label" for="adm-periode">Teks Badge Periode</label>
+        <input type="text" id="adm-periode" class="admin-input" placeholder="8 – 22 Juni 2026" />
+      </div>
+      <div class="admin-field">
+        <label class="admin-label" for="adm-countdown-label">Label Countdown</label>
+        <input type="text" id="adm-countdown-label" class="admin-input" placeholder="Kampanye berakhir dalam" />
+      </div>
+      <div class="admin-field">
+        <label class="admin-label" for="adm-enddate">Tanggal Akhir Kampanye</label>
+        <input type="datetime-local" id="adm-enddate" class="admin-input" />
+      </div>
+      <div class="admin-section-label">Background Hero</div>
+      <div class="admin-field">
+        <label class="admin-label">Gambar Background (opsional)</label>
+        <div id="adm-img-dropzone" class="adm-img-dropzone">
+          <input type="file" id="adm-img-input" accept="image/*" hidden />
+          <div id="adm-img-preview-wrap" class="adm-img-preview-wrap hidden">
+            <img id="adm-img-preview" class="adm-img-thumb" alt="preview" />
+            <button type="button" id="adm-img-remove" class="adm-img-remove">✕ Hapus</button>
+          </div>
+          <div id="adm-img-placeholder" class="adm-img-placeholder">
+            <span class="adm-img-icon">🖼</span>
+            <span class="adm-img-hint">Klik atau drag &amp; drop gambar banner</span>
+          </div>
+        </div>
+      </div>
+      <div class="admin-color-row">
+        <div class="admin-field admin-field-color">
+          <label class="admin-label" for="adm-hero-color">Warna Solid (jika tanpa gambar)</label>
+          <div class="color-input-wrap">
+            <input type="color" id="adm-hero-color" class="admin-color-input" value="#1428A0" />
+            <input type="text" id="adm-hero-color-txt" class="admin-input admin-hex-input" value="#1428A0" maxlength="7" />
+          </div>
+        </div>
+        <div class="admin-preview-box" id="admin-hero-preview">
+          <span class="apv-brand" id="apv-brand">SAMSUNG</span>
+          <span class="apv-title" id="apv-title">SUPER BRAND DAY</span>
+          <span class="apv-sub" id="apv-sub">Monitoring Dashboard</span>
+        </div>
+      </div>
+    </div>
+    <div class="admin-actions">
+      <button id="btn-admin-reset" class="btn btn-ghost">Reset Default</button>
+      <button id="btn-admin-save" class="btn btn-primary">Simpan Perubahan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="app">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">
+        <img src="HEADER/Header.png" alt="Samsung" class="topbar-logo-img" onerror="this.style.display='none'" />
+        <div class="topbar-title-group">
+          <span class="topbar-main-title">SBD Dashboard — JABO B</span>
+          <span class="topbar-sub-title" id="topbar-region">SBD SAMSUNG</span>
+        </div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span id="last-updated" class="last-updated">–</span>
+      <button id="btn-open-admin" class="btn btn-ghost btn-icon" title="Pengaturan">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <button id="btn-open-upload" class="btn btn-upload">↑ Upload Baru</button>
+    </div>
+  </header>
+
+  <!-- HERO BANNER -->
+  <section class="hero-section" id="sec-hero">
+    <div class="hero-inner">
+      <div class="hero-brand">
+        <div class="samsung-logo" id="hero-brand-name">SAMSUNG</div>
+        <div class="hero-title" id="hero-title">SUPER BRAND DAY</div>
+        <div class="hero-subtitle" id="hero-subtitle">Monitoring Dashboard · Erafone &amp; Samsung Store</div>
+      </div>
+      <div class="hero-meta">
+        <div class="periode-badge" id="hero-periode">8 – 22 Juni 2026</div>
+        <div class="countdown-wrapper">
+          <span class="countdown-label" id="hero-countdown-label">Kampanye berakhir dalam</span>
+          <div id="countdown" class="countdown">
+            <div class="cd-block"><span id="cd-d" class="cd-val">–</span><span class="cd-lbl">Hari</span></div>
+            <div class="cd-sep">:</div>
+            <div class="cd-block"><span id="cd-h" class="cd-val">–</span><span class="cd-lbl">Jam</span></div>
+            <div class="cd-sep">:</div>
+            <div class="cd-block"><span id="cd-m" class="cd-val">–</span><span class="cd-lbl">Menit</span></div>
+            <div class="cd-sep">:</div>
+            <div class="cd-block"><span id="cd-s" class="cd-val">–</span><span class="cd-lbl">Detik</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-decoration" aria-hidden="true">
+      <div class="deco-ring r1"></div><div class="deco-ring r2"></div><div class="deco-ring r3"></div>
+    </div>
+  </section>
+
+  <!-- MAIN TAB NAV -->
+  <nav class="main-tab-nav" id="main-tab-nav">
+    <button class="main-tab active" data-tab="overview">Overview</button>
+    <button class="main-tab" data-tab="per-tipe"><span class="tab-dot blue"></span>Per Tipe</button>
+    <button class="main-tab" data-tab="voucher"><span class="tab-dot amber"></span>Voucher</button>
+    <button class="main-tab" data-tab="per-lob">Per LOB</button>
+    <button class="main-tab" data-tab="per-toko">Per Toko</button>
+    <button class="main-tab" data-tab="ranking-wow">★ Ranking WoW</button>
+    <button class="main-tab" data-tab="learning">💡 Learning</button>
+  </nav>
+
+  <!-- ══ TAB: OVERVIEW ══ -->
+  <section id="tab-overview" class="tab-section">
+    <div id="kpi-skeleton" class="kpi-grid skeleton-active">
+      <div class="kpi-card skeleton"></div>
+      <div class="kpi-card skeleton"></div>
+      <div class="kpi-card skeleton"></div>
+      <div class="kpi-card skeleton"></div>
+      <div class="kpi-card skeleton"></div>
+    </div>
+    <div id="kpi-content" class="kpi-grid hidden">
+      <div class="kpi-card kpi-type" id="kpi-a37">
+        <div class="kpi-type-badge a37-badge">Galaxy A37</div>
+        <div class="kpi-main-val" id="kv-a37-est">–</div>
+        <div class="kpi-label">Est. Sell-Out</div>
+        <div class="kpi-pct-row">
+          <span class="kpi-pct-val" id="kv-a37-pct">–</span>
+          <span class="kpi-pct-label">dari Target</span>
+        </div>
+        <div class="kpi-sub-row">
+          <div class="kpi-sub"><span class="sub-label">Target</span><span class="sub-val" id="kv-a37-tgt">–</span></div>
+          <div class="kpi-sub"><span class="sub-label">MtD</span><span class="sub-val" id="kv-a37-mtd">–</span></div>
+        </div>
+        <div class="kpi-progress-bar"><div class="kpi-bar-fill a37-fill" id="bar-a37"></div></div>
+      </div>
+      <div class="kpi-card kpi-type" id="kpi-a57">
+        <div class="kpi-type-badge a57-badge">Galaxy A57</div>
+        <div class="kpi-main-val" id="kv-a57-est">–</div>
+        <div class="kpi-label">Est. Sell-Out</div>
+        <div class="kpi-pct-row">
+          <span class="kpi-pct-val" id="kv-a57-pct">–</span>
+          <span class="kpi-pct-label">dari Target</span>
+        </div>
+        <div class="kpi-sub-row">
+          <div class="kpi-sub"><span class="sub-label">Target</span><span class="sub-val" id="kv-a57-tgt">–</span></div>
+          <div class="kpi-sub"><span class="sub-label">MtD</span><span class="sub-val" id="kv-a57-mtd">–</span></div>
+        </div>
+        <div class="kpi-progress-bar"><div class="kpi-bar-fill a57-fill" id="bar-a57"></div></div>
+      </div>
+      <div class="kpi-card kpi-type" id="kpi-s26">
+        <div class="kpi-type-badge s26-badge">Galaxy S26</div>
+        <div class="kpi-main-val" id="kv-s26-est">–</div>
+        <div class="kpi-label">Est. Sell-Out</div>
+        <div class="kpi-pct-row">
+          <span class="kpi-pct-val" id="kv-s26-pct">–</span>
+          <span class="kpi-pct-label">dari Target</span>
+        </div>
+        <div class="kpi-sub-row">
+          <div class="kpi-sub"><span class="sub-label">Target</span><span class="sub-val" id="kv-s26-tgt">–</span></div>
+          <div class="kpi-sub"><span class="sub-label">MtD</span><span class="sub-val" id="kv-s26-mtd">–</span></div>
+        </div>
+        <div class="kpi-progress-bar"><div class="kpi-bar-fill s26-fill" id="bar-s26"></div></div>
+      </div>
+      <div class="kpi-card kpi-voucher">
+        <div class="kpi-type-badge voucher-badge">Voucher Total</div>
+        <div class="voucher-row">
+          <div class="voucher-stat"><span class="voucher-val" id="kv-v-tersedia">–</span><span class="voucher-lbl">Tersedia</span></div>
+          <div class="voucher-arrow">→</div>
+          <div class="voucher-stat"><span class="voucher-val pakai" id="kv-v-pakai">–</span><span class="voucher-lbl">Terpakai</span></div>
+          <div class="voucher-arrow">→</div>
+          <div class="voucher-stat"><span class="voucher-val sisa" id="kv-v-sisa">–</span><span class="voucher-lbl">Sisa</span></div>
+        </div>
+        <div class="voucher-util-bar"><div class="voucher-util-fill" id="bar-voucher"></div></div>
+        <div class="voucher-util-label" id="lbl-voucher-util">–</div>
+      </div>
+      <div class="kpi-card kpi-stores">
+        <div class="kpi-type-badge stores-badge">Toko</div>
+        <div class="stores-row">
+          <div class="stores-stat"><span class="stores-val green" id="kv-on-target">–</span><span class="stores-lbl">On-Target</span></div>
+          <div class="stores-stat"><span class="stores-val red" id="kv-under-target">–</span><span class="stores-lbl">Under-Target</span></div>
+        </div>
+        <div class="stores-total" id="kv-total-stores">– toko total</div>
+      </div>
+    </div>
+    <div id="kpi-empty" class="empty-state hidden">
+      <div class="empty-icon">📊</div>
+      <p>Belum ada data. Upload file .xlsx untuk memulai.</p>
+      <button class="btn btn-primary" onclick="document.getElementById('btn-open-upload').click()">Upload Sekarang</button>
+    </div>
+    <!-- Overview charts row -->
+    <div id="overview-charts" class="hidden">
+      <div class="ov-charts-row">
+        <div class="section-card ov-chart-card">
+          <div class="section-card-title">● Progress MTD vs Target</div>
+          <canvas id="ov-progress-chart" height="200"></canvas>
+        </div>
+        <div class="section-card ov-chart-card">
+          <div class="section-card-title">● MTD per LOB</div>
+          <canvas id="ov-lob-chart" height="200"></canvas>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="section-card-title">● Ringkasan per LOB</div>
+        <div id="ov-lob-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ TAB: PER TIPE ══ -->
+  <section id="tab-per-tipe" class="tab-section hidden">
+    <div id="pertipe-content">
+      <div class="empty-state"><p>Upload data Excel untuk melihat analisis Per Tipe.</p></div>
+    </div>
+  </section>
+
+  <!-- ══ TAB: VOUCHER ══ -->
+  <section id="tab-voucher" class="tab-section hidden">
+    <div id="voucher-tab-content">
+      <div class="empty-state"><p>Upload data Excel untuk melihat data Voucher.</p></div>
+    </div>
+  </section>
+
+  <!-- ══ TAB: PER LOB ══ -->
+  <section id="tab-per-lob" class="tab-section hidden">
+    <div id="perlob-content">
+      <div class="empty-state"><p>Upload data Excel untuk melihat analisis Per LOB.</p></div>
+    </div>
+  </section>
+
+  <!-- ══ TAB: PER TOKO ══ -->
+  <section id="tab-per-toko" class="tab-section hidden">
+    <div id="pertoko-content">
+      <div class="empty-state"><p>Upload data Excel untuk melihat data Per Toko.</p></div>
+    </div>
+  </section>
+
+  <!-- ══ TAB: RANKING WOW ══ -->
+  <section id="tab-ranking-wow" class="tab-section hidden">
+    <div id="ranking-content">
+      <div class="empty-state"><p>Upload data Excel untuk melihat Ranking WoW.</p></div>
+    </div>
+  </section>
+
+  <!-- ══ TAB: LEARNING ══ -->
+  <section id="tab-learning" class="tab-section hidden">
+    <div class="learning-content">
+      <div class="learning-card">
+        <h3>📋 Panduan Dashboard SBD Samsung</h3>
+        <div class="learning-grid">
+          <div class="learn-item">
+            <div class="learn-icon">📤</div>
+            <div class="learn-title">Upload Data</div>
+            <p>Klik tombol "Upload Baru" di kanan atas, lalu pilih file Excel SBD Samsung. Data akan langsung diperbarui di semua tab.</p>
+          </div>
+          <div class="learn-item">
+            <div class="learn-icon">📊</div>
+            <div class="learn-title">Per Tipe</div>
+            <p>Lihat pencapaian per produk (A37, A57, S26). Setiap kartu menampilkan MTD, estimasi, progress bar, data mingguan, dan top toko.</p>
+          </div>
+          <div class="learn-item">
+            <div class="learn-icon">🎫</div>
+            <div class="learn-title">Voucher</div>
+            <p>Monitor utilisasi voucher per produk. Lihat berapa voucher tersedia, terpakai, dan sisa beserta nilai rupiahnya.</p>
+          </div>
+          <div class="learn-item">
+            <div class="learn-icon">👥</div>
+            <div class="learn-title">Per LOB</div>
+            <p>Bandingkan performa per Leader (LOB). Lihat grafik MTD dan WoW per leader beserta breakdown A37/A57/S26.</p>
+          </div>
+          <div class="learn-item">
+            <div class="learn-icon">🏪</div>
+            <div class="learn-title">Per Toko</div>
+            <p>Tabel detail semua toko. Filter per leader dan sort berdasarkan MTD Total, A37, A57, atau S26.</p>
+          </div>
+          <div class="learn-item">
+            <div class="learn-icon">⭐</div>
+            <div class="learn-title">Ranking WoW</div>
+            <p>Top grower dan bottom decline per minggu. Identifikasi toko terbaik dan yang perlu perhatian khusus.</p>
+          </div>
+        </div>
+        <div class="learn-notes">
+          <h4>📌 Sumber Data Excel</h4>
+          <ul>
+            <li><strong>Skema 1</strong> — Target awal per toko</li>
+            <li><strong>Skema 3</strong> — Target per bulan/minggu, alokasi voucher, dan pencapaian aktual</li>
+            <li><strong>Kolom AW–BO di Skema 3</strong> — Recap achievement per TSH/LOB</li>
+          </ul>
+          <h4>💡 Tips</h4>
+          <ul>
+            <li>Upload ulang file setiap minggu untuk update data terbaru</li>
+            <li>Gunakan tombol ⚙ untuk mengubah nama campaign dan banner</li>
+            <li>Klik nama toko di tab Per Toko untuk melihat detail lengkap</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <span>SBD Dashboard JABO B · Erajaya Digital · © 2026</span>
+  </footer>
+
+</div><!-- #app -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="upload-handler.js?v=4"></script>
+<script src="app.js?v=5"></script>
+</body>
+</html>

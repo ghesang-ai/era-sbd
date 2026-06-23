@@ -82,6 +82,8 @@ body {
   border-bottom: 0.5px solid var(--border);
   margin-bottom:0;
   background: var(--bg-page);
+  position: relative;
+  z-index: 200;
 }
 .topbar-left { display:flex; align-items:center; gap:12px; }
 .topbar-logo { display:flex; align-items:center; gap:10px; }

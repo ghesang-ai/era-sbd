@@ -45,14 +45,14 @@ function chartOpts({ indexAxis, stacked, scales=true, legend=true }={}) {
     responsive:true, maintainAspectRatio:false,
     animation:{ duration:600 },
     plugins:{
-      legend:{ display:legend, labels:{ color:'#A0AACC', font:{family:'Plus Jakarta Sans',size:11,weight:'600'}, boxWidth:10 }},
-      tooltip:{ backgroundColor:'#0D1540', borderColor:'rgba(100,120,200,0.3)', borderWidth:1,
-        titleColor:'#FFF', bodyColor:'#A0AACC', padding:10, cornerRadius:8 },
+      legend:{ display:legend, labels:{ color:'#475569', font:{family:'Plus Jakarta Sans',size:11,weight:'600'}, boxWidth:10 }},
+      tooltip:{ backgroundColor:'#1A2040', borderColor:'#E2E8F0', borderWidth:1,
+        titleColor:'#FFF', bodyColor:'#CBD5E1', padding:10, cornerRadius:8 },
     },
     ...(indexAxis ? {indexAxis} : {}),
     ...(scales ? { scales:{
-      x:{ grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#4B5A8B',font:{size:10}}, stacked:!!stacked },
-      y:{ grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#4B5A8B',font:{size:10}}, stacked:!!stacked },
+      x:{ grid:{color:'rgba(0,0,0,0.04)'}, ticks:{color:'#94A3B8',font:{size:10}}, stacked:!!stacked },
+      y:{ grid:{color:'rgba(0,0,0,0.04)'}, ticks:{color:'#94A3B8',font:{size:10}}, stacked:!!stacked },
     }} : {}),
   };
 }
@@ -162,9 +162,9 @@ function renderOverview(data) {
       data: {
         labels: ['Galaxy A37','Galaxy A57','Galaxy S26'],
         datasets: [
-          { label:'Target', data:[ks.a37.target,ks.a57.target,ks.s26.target], backgroundColor:'#2A3568', borderRadius:4 },
-          { label:'Est. Sell-Out', data:[ks.a37.est,ks.a57.est,ks.s26.est], backgroundColor:['#00C2FF88','#FEB01988','#9B59B688'], borderRadius:4 },
-          { label:'MTD Aktual', data:[ks.a37.mtd,ks.a57.mtd,ks.s26.mtd], backgroundColor:['#00C2FF','#FEB019','#9B59B6'], borderRadius:4 },
+          { label:'Target', data:[ks.a37.target,ks.a57.target,ks.s26.target], backgroundColor:'#E2E8F0', borderRadius:4 },
+          { label:'Est. Sell-Out', data:[ks.a37.est,ks.a57.est,ks.s26.est], backgroundColor:['#1428A088','#F59E0B88','#8B5CF688'], borderRadius:4 },
+          { label:'MTD Aktual', data:[ks.a37.mtd,ks.a57.mtd,ks.s26.mtd], backgroundColor:['#1428A0','#F59E0B','#8B5CF6'], borderRadius:4 },
         ]
       },
       options: chartOpts({ legend:true })
@@ -180,9 +180,9 @@ function renderOverview(data) {
       data: {
         labels: leaders.map(l=>l.name),
         datasets: [
-          { label:'A37', data:leaders.map(l=>l.a37?.mtd||0), backgroundColor:'#00C2FF', borderRadius:3, stack:'s' },
-          { label:'A57', data:leaders.map(l=>l.a57?.mtd||0), backgroundColor:'#FEB019', borderRadius:3, stack:'s' },
-          { label:'S26', data:leaders.map(l=>l.s26?.mtd||0), backgroundColor:'#9B59B6', borderRadius:3, stack:'s' },
+          { label:'A37', data:leaders.map(l=>l.a37?.mtd||0), backgroundColor:'#1428A0', borderRadius:3, stack:'s' },
+          { label:'A57', data:leaders.map(l=>l.a57?.mtd||0), backgroundColor:'#F59E0B', borderRadius:3, stack:'s' },
+          { label:'S26', data:leaders.map(l=>l.s26?.mtd||0), backgroundColor:'#8B5CF6', borderRadius:3, stack:'s' },
         ]
       },
       options: chartOpts({ stacked:true, legend:true })
@@ -228,7 +228,7 @@ function renderPerTipe(data) {
   const wl = data.meta?.weekLabels || { w1:'W-1', w2:'W-curr', w3:'W-next' };
   const stores = data.stores || [];
 
-  function typeColor(t) { return t==='a37'?'#00C2FF':t==='a57'?'#FEB019':'#9B59B6'; }
+  function typeColor(t) { return t==='a37'?'#1428A0':t==='a57'?'#F59E0B':'#8B5CF6'; }
   function typeName(t) { return t==='a37'?'GALAXY A37':t==='a57'?'GALAXY A57':'GALAXY S26'; }
 
   function buildCard(type) {
@@ -330,7 +330,7 @@ function renderPerTipe(data) {
         data:{
           labels,
           datasets:[
-            { label:`Sebelum ${(data.meta?.weekLabels||{}).w1||'W-1'}`, data:w0vals, backgroundColor:'#2A3568', borderRadius:3 },
+            { label:`Sebelum ${(data.meta?.weekLabels||{}).w1||'W-1'}`, data:w0vals, backgroundColor:'#E2E8F0', borderRadius:3 },
             { label:(data.meta?.weekLabels||{}).w1||'W-1', data:w25vals, backgroundColor:color+'CC', borderRadius:3 },
           ],
         },
@@ -358,7 +358,7 @@ function renderVoucherTab(data) {
     const util  = t.voucherTersedia>0 ? t.voucherPakai/t.voucherTersedia : 0;
     const nilaiSisa = sisa * VVAL[type];
     const uncaptured= t.voucherTersedia * VVAL[type];
-    const color = type==='a37'?'#00C2FF':type==='a57'?'#FEB019':'#9B59B6';
+    const color = type==='a37'?'#1428A0':type==='a57'?'#F59E0B':'#8B5CF6';
     return `
     <div class="vc-summary-card" style="--vc-color:${color}">
       <div class="vc-card-header">${label}</div>
@@ -380,7 +380,7 @@ function renderVoucherTab(data) {
 
   // Top stores by sisa for each type
   function topSisaRows(type, limit=15) {
-    const color = type==='a37'?'#00C2FF':type==='a57'?'#FEB019':'#9B59B6';
+    const color = type==='a37'?'#1428A0':type==='a57'?'#F59E0B':'#8B5CF6';
     const sorted = stores
       .map(s=>({...s, sisaType: s[type].voucherTersedia - s[type].pakai, paiType: s[type].pakai}))
       .filter(s=>s.sisaType>0)
@@ -439,8 +439,8 @@ function renderVoucherTab(data) {
         data:{
           labels:['A37 (100K)','A57 (200K)','S26 (300K)'],
           datasets:[
-            { label:'Terpakai', data:[ks.a37.voucherPakai,ks.a57.voucherPakai,ks.s26.voucherPakai], backgroundColor:['#00C2FF99','#FEB01999','#9B59B699'], borderRadius:4 },
-            { label:'Sisa', data:[ks.a37.voucherTersedia-ks.a37.voucherPakai, ks.a57.voucherTersedia-ks.a57.voucherPakai, ks.s26.voucherTersedia-ks.s26.voucherPakai], backgroundColor:['#00C2FF22','#FEB01922','#9B59B622'], borderRadius:4 },
+            { label:'Terpakai', data:[ks.a37.voucherPakai,ks.a57.voucherPakai,ks.s26.voucherPakai], backgroundColor:[''#1428A099'',''#F59E0B99'',''#8B5CF699''], borderRadius:4 },
+            { label:'Sisa', data:[ks.a37.voucherTersedia-ks.a37.voucherPakai, ks.a57.voucherTersedia-ks.a57.voucherPakai, ks.s26.voucherTersedia-ks.s26.voucherPakai], backgroundColor:[''#1428A022'',''#F59E0B22'',''#8B5CF622''], borderRadius:4 },
           ],
         },
         options:{ ...chartOpts({scales:true,stacked:true,legend:true}), aspectRatio:undefined },
@@ -473,7 +473,7 @@ function topSisaByTotal(stores, limit) {
       <div class="vc-top-mid">
         <span class="vc-store-name">${shortName(s.siteDesc)}</span>
         <div class="vc-top-bar-wrap">
-          <div class="vc-top-bar" style="width:${Math.min(s.sisaTotal/maxSisa*100,100).toFixed(1)}%;background:#FF456040"></div>
+          <div class="vc-top-bar" style="width:${Math.min(s.sisaTotal/maxSisa*100,100).toFixed(1)}%;background:#EF444440"></div>
         </div>
       </div>
       <span class="vc-sisa-val pct-red">${s.sisaTotal} sisa</span>
@@ -500,7 +500,7 @@ function renderPerLOB(data) {
 
     function subCard(type) {
       const t   = ldr[type];
-      const col = type==='a37'?'#00C2FF':type==='a57'?'#FEB019':'#9B59B6';
+      const col = type==='a37'?'#1428A0':type==='a57'?'#F59E0B':'#8B5CF6';
       const wow = (t.w25||0)-(t.w0||0);
       const maxBar = Math.max(t.w0||0,t.w25||0,1);
       return `
@@ -565,9 +565,9 @@ function renderPerLOB(data) {
         data:{
           labels:lobNames,
           datasets:[
-            { label:'A37', data:leaders.map(l=>l.a37.mtd||0), backgroundColor:'#00C2FF88', borderRadius:4 },
-            { label:'A57', data:leaders.map(l=>l.a57.mtd||0), backgroundColor:'#FEB01988', borderRadius:4 },
-            { label:'S26', data:leaders.map(l=>l.s26.mtd||0), backgroundColor:'#9B59B688', borderRadius:4 },
+            { label:'A37', data:leaders.map(l=>l.a37.mtd||0), backgroundColor:'#1428A088', borderRadius:4 },
+            { label:'A57', data:leaders.map(l=>l.a57.mtd||0), backgroundColor:'#F59E0B88', borderRadius:4 },
+            { label:'S26', data:leaders.map(l=>l.s26.mtd||0), backgroundColor:'#8B5CF688', borderRadius:4 },
           ],
         },
         options:chartOpts({scales:true,legend:true}),
@@ -581,8 +581,8 @@ function renderPerLOB(data) {
         data:{
           labels:lobNames,
           datasets:[
-            { label:`Sbl ${wl.w1}`, data:leaders.map(l=>(l.a37.w0||0)+(l.a57.w0||0)+(l.s26.w0||0)), backgroundColor:'#2A356888', borderRadius:4 },
-            { label:wl.w1, data:leaders.map(l=>(l.a37.w25||0)+(l.a57.w25||0)+(l.s26.w25||0)), backgroundColor:'#00C2FF88', borderRadius:4 },
+            { label:`Sbl ${wl.w1}`, data:leaders.map(l=>(l.a37.w0||0)+(l.a57.w0||0)+(l.s26.w0||0)), backgroundColor:'#94A3B888', borderRadius:4 },
+            { label:wl.w1, data:leaders.map(l=>(l.a37.w25||0)+(l.a57.w25||0)+(l.s26.w25||0)), backgroundColor:'#1428A088', borderRadius:4 },
           ],
         },
         options:chartOpts({scales:true,legend:true}),
@@ -763,11 +763,11 @@ function renderRankingWoW(data) {
     <div class="wow-top-grid">
       <div class="wow-panel wow-panel-green">
         <div class="wow-panel-title">■ TOP 3 GROWER — ABSOLUT (${wl.w1})</div>
-        ${growers.map(s=>wowStoreCard(s,'#00E396')).join('')}
+        ${growers.map(s=>wowStoreCard(s,'#10B981')).join('')}
       </div>
       <div class="wow-panel wow-panel-red">
         <div class="wow-panel-title">■ BOTTOM 3 DECLINE</div>
-        ${declines.map(s=>wowStoreCard(s,'#FF4560')).join('')}
+        ${declines.map(s=>wowStoreCard(s,'#EF4444')).join('')}
       </div>
       <div class="wow-panel wow-panel-amber">
         <div class="wow-panel-title">■ TOP 3 GROWTH % (min 2)</div>
@@ -811,7 +811,7 @@ function renderRankingWoW(data) {
       data:{
         labels: top12.map(s=>shortName(s.siteDesc)),
         datasets:[
-          { label:'W-prev', data:top12.map(s=>s.w0Total), backgroundColor:'#2A3568CC', borderRadius:3 },
+          { label:'W-prev', data:top12.map(s=>s.w0Total), backgroundColor:'#94A3B8CC', borderRadius:3 },
           { label:wl.w1,    data:top12.map(s=>s.w25Total), backgroundColor:'#00C2FFCC', borderRadius:3 },
         ],
       },

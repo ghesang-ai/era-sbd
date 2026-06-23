@@ -157,7 +157,7 @@ function renderOverview(data) {
   // Chart 1: MTD vs Target vs Est per produk
   const ctxP = document.getElementById('ov-progress-chart');
   if (ctxP) {
-    new Chart(ctxP, {
+    _charts['ov-progress-chart'] = new Chart(ctxP, {
       type: 'bar',
       data: {
         labels: ['Galaxy A37','Galaxy A57','Galaxy S26'],
@@ -175,7 +175,7 @@ function renderOverview(data) {
   const leaders = (data.by_leader||[]).filter(l=>l.name!=='Grand Total');
   const ctxL = document.getElementById('ov-lob-chart');
   if (ctxL && leaders.length) {
-    new Chart(ctxL, {
+    _charts['ov-lob-chart'] = new Chart(ctxL, {
       type: 'bar',
       data: {
         labels: leaders.map(l=>l.name),

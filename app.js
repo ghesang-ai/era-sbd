@@ -940,27 +940,17 @@ function applyAdminConfig(cfg) {
   set('hero-title',cfg.title); set('hero-subtitle',cfg.subtitle);
   set('hero-periode',cfg.periode); set('hero-countdown-label',cfg.countdownLabel);
   const hero=document.getElementById('sec-hero');
-  const heroInner=hero?.querySelector('.hero-inner');
-  const heroDeco =hero?.querySelector('.hero-decoration');
-  let heroImgEl  =document.getElementById('hero-bg-image');
   if (hero) {
     const localImg = localStorage.getItem('sbd-hero-image');
-    const img = localImg || 'HEADER/Header.png';
-    hero.style.background='none'; hero.style.padding='0'; hero.style.overflow='hidden';
-    if (heroInner) heroInner.style.display='none';
-    if (heroDeco)  heroDeco.style.display='none';
+    const imgSrc = localImg || 'HEADER/Header.png';
+    let heroImgEl = document.getElementById('hero-bg-image');
     if (!heroImgEl) {
-      heroImgEl=document.createElement('img'); heroImgEl.id='hero-bg-image';
-      heroImgEl.style.cssText='width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;max-height:220px;';
-      heroImgEl.onerror=function(){
-        hero.style.background=cfg.heroColor; hero.style.padding=''; hero.style.overflow='';
-        if(heroInner) heroInner.style.display='';
-        if(heroDeco)  heroDeco.style.display='';
-        heroImgEl.style.display='none';
-      };
+      heroImgEl = document.createElement('img');
+      heroImgEl.id = 'hero-bg-image';
+      heroImgEl.style.cssText = 'width:100%;height:auto;display:block;border-radius:inherit;';
       hero.appendChild(heroImgEl);
     }
-    heroImgEl.src=img; heroImgEl.style.display='block';
+    heroImgEl.src = imgSrc;
   }
   CONFIG.CAMPAIGN_END=new Date(cfg.endDate);
 }

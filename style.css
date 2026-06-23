@@ -98,14 +98,25 @@ body {
   border-radius:20px; padding:5px 12px;
 }
 
+/* ═══ SAMSUNG BADGE (topbar) ═══ */
+.topbar-samsung-badge {
+  background: var(--blue);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+
 /* ═══ HERO SECTION ═══ */
 .hero-section {
   position:relative; overflow:hidden;
   background:var(--blue);
-  border-radius:0;
-  margin-bottom:0;
+  border-radius: var(--radius-lg);
+  margin: 8px 0 0;
 }
-.hero-section img { display:block; width:100%; }
+.hero-section img { display:block; width:100%; height:auto; border-radius: var(--radius-lg); }
 .hero-inner {
   display:flex; align-items:center; justify-content:space-between;
   padding:32px 40px; gap:24px;

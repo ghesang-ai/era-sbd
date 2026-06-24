@@ -25,7 +25,14 @@
     <div id="upload-preview" class="upload-preview" style="display:none"></div>
     <p id="upload-msg" class="upload-msg"></p>
     <div class="upload-actions">
-      <button id="btn-submit" class="btn btn-primary" disabled>Submit ke Server</button>
+      <div id="submit-hint" class="submit-hint hidden">
+        ✅ Data berhasil dibaca! Klik tombol di bawah untuk menyimpan ke server agar semua orang bisa melihat data terbaru.
+      </div>
+      <button id="btn-submit" class="btn btn-submit-big" disabled>
+        <span class="btn-submit-icon">☁</span>
+        Submit ke Server
+        <span class="btn-submit-sub">Simpan permanen · Semua orang bisa lihat</span>
+      </button>
     </div>
   </div>
 </div>

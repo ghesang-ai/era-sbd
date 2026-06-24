@@ -923,15 +923,14 @@ function initUploadModal() {
     _data = json;
     saveLocalData(json);
     renderAll(_data);
-    setTimeout(()=>modal?.classList.add('hidden'), 1500);
+    // Tampilkan hint submit — modal TIDAK auto-close
+    document.getElementById('submit-hint')?.classList.remove('hidden');
   };
 
-  if (CONFIG.GAS_URL.includes('AKfycbx')) {
-    // GAS configured
-  }
-
   initUploadZone(CONFIG.GAS_URL, CONFIG.TOKEN, (json)=>{
+    // Dipanggil setelah submit ke server berhasil — baru tutup modal
     modal?.classList.add('hidden');
+    document.getElementById('submit-hint')?.classList.add('hidden');
     _data = json;
     saveLocalData(json);
     renderAll(_data);

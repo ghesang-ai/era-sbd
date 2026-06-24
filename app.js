@@ -58,14 +58,37 @@ function chartOpts({ indexAxis, stacked, scales=true, legend=true }={}) {
 }
 
 /* ─── Fetch ─── */
+const LS_DATA_KEY = 'sbd-dashboard-data';
+
+function saveLocalData(json) {
+  try { localStorage.setItem(LS_DATA_KEY, JSON.stringify(json)); } catch(e) {}
+}
+function loadLocalData() {
+  try { const s=localStorage.getItem(LS_DATA_KEY); return s?JSON.parse(s):null; } catch(e) { return null; }
+}
+
 async function fetchData() {
   if (CONFIG.USE_MOCK) return null;
-  const res = await fetch(CONFIG.GAS_URL);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const json = await res.json();
-  if (json.status==='empty') return null;
-  if (json.status!=='ok') throw new Error(json.message||'Fetch error');
-  return json.data;
+  try {
+    const res = await fetch(CONFIG.GAS_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json.status==='empty') return loadLocalData();
+    if (json.status!=='ok') throw new Error(json.message||'Fetch error');
+    // Prefer server data if MTD > 0, else fallback to localStorage
+    const serverData = json.data;
+    const ks = serverData?.kpi_summary;
+    const serverHasData = ks && ((ks.a37?.mtd||0)+(ks.a57?.mtd||0)+(ks.s26?.mtd||0)) > 0;
+    if (serverHasData) return serverData;
+    const local = loadLocalData();
+    const lks = local?.kpi_summary;
+    const localHasData = lks && ((lks.a37?.mtd||0)+(lks.a57?.mtd||0)+(lks.s26?.mtd||0)) > 0;
+    return localHasData ? local : serverData;
+  } catch(err) {
+    const local = loadLocalData();
+    if (local) return local;
+    throw err;
+  }
 }
 
 /* ─── Tab Navigation ─── */
@@ -880,6 +903,7 @@ function initUploadModal() {
 
   window.__onPreview = (json)=>{
     _data = json;
+    saveLocalData(json);
     renderAll(_data);
     setTimeout(()=>modal?.classList.add('hidden'), 1500);
   };
@@ -891,6 +915,7 @@ function initUploadModal() {
   initUploadZone(CONFIG.GAS_URL, CONFIG.TOKEN, (json)=>{
     modal?.classList.add('hidden');
     _data = json;
+    saveLocalData(json);
     renderAll(_data);
   });
 }

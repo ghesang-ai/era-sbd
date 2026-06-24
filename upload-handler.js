@@ -3,13 +3,13 @@
 /* ─── Column indices (0-based) — same for all 3 product sheets ─── */
 const C = {
   SITE_CODE: 0, SITE_DESC: 1, LEADER: 2, TSH: 3, BU: 4, STATUS: 5, TERRITORY: 6,
-  TARGET: 8, TARGET_WK: 9,
-  EST: 10,      // MTD full = Estimasi Sell Out
+  BASELINE: 7, TARGET: 8, TARGET_WK: 9,
   MTD: 15,
   W24: 16, W25: 17, W26: 18, W27: 19,
   PCT_MTD: 26,  // %MTD tracking indicator
   V_TERSEDIA: 29, V_SISA: 30,
   V_W24: 31, V_W25: 32, V_W26: 33, V_W27: 34,
+  EST: 35,      // AJ = Est. Sell Out (pre-calculated in Excel)
 };
 
 const SHEETS = {
@@ -123,12 +123,18 @@ function parseExcel(arrayBuffer, filename) {
       s26: { ...s26, w0: s26w0 },
       mtdTotal:    (a37.mtd || 0) + (a57.mtd || 0) + (s26.mtd || 0),
       targetTotal: (a37.target || 0) + (a57.target || 0) + (s26.target || 0),
+      w24Total:    (a37.w24 || 0) + (a57.w24 || 0) + (s26.w24 || 0),
       w25Total:    (a37.w25 || 0) + (a57.w25 || 0) + (s26.w25 || 0),
       w26Total:    (a37.w26 || 0) + (a57.w26 || 0) + (s26.w26 || 0),
+      w27Total:    (a37.w27 || 0) + (a57.w27 || 0) + (s26.w27 || 0),
       w0Total:     a37w0 + a57w0 + s26w0,
       vUsed,
       vTersedia,
       vSisa: vTersedia - vUsed,
+      vW24Total:   (a37.vW24 || 0) + (a57.vW24 || 0) + (s26.vW24 || 0),
+      vW25Total:   (a37.vW25 || 0) + (a57.vW25 || 0) + (s26.vW25 || 0),
+      vW26Total:   (a37.vW26 || 0) + (a57.vW26 || 0) + (s26.vW26 || 0),
+      vW27Total:   (a37.vW27 || 0) + (a57.vW27 || 0) + (s26.vW27 || 0),
     });
   }
 
@@ -188,9 +194,10 @@ function parseExcel(arrayBuffer, filename) {
       acc.w24Total        += t.w24 || 0;
       acc.w25Total        += t.w25 || 0;
       acc.w26Total        += t.w26 || 0;
+      acc.w27Total        += t.w27 || 0;
       acc.w0Total         += t.w0 || 0;
       return acc;
-    }, { target:0, mtd:0, est:0, voucherTersedia:0, voucherPakai:0, w24Total:0, w25Total:0, w26Total:0, w0Total:0 });
+    }, { target:0, mtd:0, est:0, voucherTersedia:0, voucherPakai:0, w24Total:0, w25Total:0, w26Total:0, w27Total:0, w0Total:0 });
   }
 
   const fa37 = sumStoresType('a37');
@@ -227,7 +234,7 @@ function parseExcel(arrayBuffer, filename) {
       uploadedAt:  new Date().toISOString(),
       periode,
       totalStores: stores.length,
-      weekLabels:  { w1: 'W24', w2: 'W25', w3: 'W26' },
+      weekLabels:  { w1: 'W24', w2: 'W25', w3: 'W26', w4: 'W27' },
     },
     kpi_summary: {
       a37: fa37,

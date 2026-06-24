@@ -429,8 +429,11 @@ body {
 .toko-table td { padding:9px 12px; color:var(--text-secondary); }
 .toko-table .num-cell { text-align:right; }
 .toko-code { font-size:10px; background:var(--bg-page); padding:2px 6px; border-radius:4px; font-weight:700; color:var(--text-muted); }
-.toko-name-cell { font-weight:600; color:var(--text-primary); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.toko-name-cell { font-weight:600; color:var(--text-primary); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .lob-badge { font-size:9px; font-weight:700; padding:2px 7px; border-radius:3px; background:var(--bg-page); color:var(--text-muted); border:0.5px solid var(--border); }
+.tbl-group-header th { padding:4px 12px; font-size:9px; background:var(--bg-card2); border-bottom:none; }
+.tbl-group-label { text-align:center !important; color:var(--blue); background:rgba(20,40,160,0.04) !important; border-radius:4px; }
+.tbl-sep { border-left:1.5px solid var(--border-md) !important; }
 
 /* ═══ RANKING WOW ═══ */
 .wow-top-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:16px; }

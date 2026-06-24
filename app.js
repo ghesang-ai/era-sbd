@@ -14,7 +14,7 @@ let _activeTab   = 'overview';
 let _charts      = {};
 
 /* ─── Helpers ─── */
-const fmtN   = v => Number(v||0).toLocaleString('id-ID');
+const fmtN   = v => Math.round(+v||0).toLocaleString('id-ID');
 const fmtPct = v => ((+v||0)*100).toFixed(1)+'%';
 const clsPct = v => v>=1 ? 'pct-green' : v>=0.8 ? 'pct-amber' : 'pct-red';
 const clsWoW = v => v>0 ? 'wow-pos' : v<0 ? 'wow-neg' : 'wow-zero';
@@ -639,20 +639,25 @@ function renderPerToko(data) {
     });
 
     const rows = filtered.map(s=>{
-      const pct = s.targetTotal>0?s.mtdTotal/s.targetTotal:0;
-      const delta = s.w25Total - s.w0Total;
+      const pct    = s.targetTotal > 0 ? s.mtdTotal / s.targetTotal : 0;
       const pctCls = pct>=1?'pct-green':pct>=0.8?'pct-amber':'pct-red';
+      const vSisa  = s.vSisa || 0;
+      const sisCls = vSisa <= 0 ? 'pct-red' : '';
       return `<tr data-code="${s.siteCode}">
         <td><span class="toko-code">${s.siteCode}</span></td>
         <td class="toko-name-cell">${s.siteDesc}</td>
         <td><span class="lob-badge">${s.leader}</span></td>
         <td class="num-cell"><strong>${fmtN(s.mtdTotal)}</strong></td>
         <td class="num-cell ${pctCls}">${(pct*100).toFixed(0)}%</td>
-        <td class="num-cell">${fmtN(s.w0Total)}</td>
-        <td class="num-cell">${fmtN(s.w25Total)}</td>
-        <td class="num-cell ${clsWoW(delta)}">${fmtWoW(delta)}</td>
-        <td class="num-cell">${fmtN(s.vUsed)}</td>
-        <td class="num-cell pct-red">${fmtN(s.vSisa)}</td>
+        <td class="num-cell">${fmtN(s.w24Total||0)}</td>
+        <td class="num-cell">${fmtN(s.w25Total||0)}</td>
+        <td class="num-cell">${fmtN(s.w26Total||0)}</td>
+        <td class="num-cell">${fmtN(s.w27Total||0)}</td>
+        <td class="num-cell tbl-sep">${fmtN(s.vW24Total||0)}</td>
+        <td class="num-cell">${fmtN(s.vW25Total||0)}</td>
+        <td class="num-cell">${fmtN(s.vW26Total||0)}</td>
+        <td class="num-cell">${fmtN(s.vW27Total||0)}</td>
+        <td class="num-cell tbl-sep ${sisCls}">${fmtN(vSisa)}</td>
         <td class="num-cell">${fmtN(s.a37.mtd)}</td>
         <td class="num-cell">${fmtN(s.a57.mtd)}</td>
         <td class="num-cell">${fmtN(s.s26.mtd)}</td>
@@ -660,19 +665,32 @@ function renderPerToko(data) {
     }).join('');
 
     return `<div class="toko-table-wrap"><table class="toko-table">
-      <thead><tr>
-        <th>Code</th><th>Toko</th><th>LOB</th>
-        <th class="num-cell sortable ${_tokoSortCol==='mtdTotal'?'sort-active':''}" data-sort="mtdTotal">MTD</th>
-        <th class="num-cell">%Target</th>
-        <th class="num-cell">${wl.w1} Sbl</th>
-        <th class="num-cell">${wl.w1}</th>
-        <th class="num-cell">Δ</th>
-        <th class="num-cell">V.Used</th>
-        <th class="num-cell">V.Sisa</th>
-        <th class="num-cell sortable ${_tokoSortCol==='a37'?'sort-active':''}" data-sort="a37">A37</th>
-        <th class="num-cell sortable ${_tokoSortCol==='a57'?'sort-active':''}" data-sort="a57">A57</th>
-        <th class="num-cell sortable ${_tokoSortCol==='s26'?'sort-active':''}" data-sort="s26">S26</th>
-      </tr></thead>
+      <thead>
+        <tr class="tbl-group-header">
+          <th colspan="5"></th>
+          <th colspan="4" class="tbl-group-label">Ach Sales per Week</th>
+          <th colspan="4" class="tbl-group-label tbl-sep">Voucher Terpakai / Week</th>
+          <th class="tbl-group-label tbl-sep">Sisa</th>
+          <th colspan="3" class="tbl-group-label">MTD per Tipe</th>
+        </tr>
+        <tr>
+          <th>Code</th><th>Toko</th><th>LOB</th>
+          <th class="num-cell sortable ${_tokoSortCol==='mtdTotal'?'sort-active':''}" data-sort="mtdTotal">MTD</th>
+          <th class="num-cell">%Target</th>
+          <th class="num-cell">W24</th>
+          <th class="num-cell">W25</th>
+          <th class="num-cell">W26</th>
+          <th class="num-cell">W27</th>
+          <th class="num-cell tbl-sep">V.W24</th>
+          <th class="num-cell">V.W25</th>
+          <th class="num-cell">V.W26</th>
+          <th class="num-cell">V.W27</th>
+          <th class="num-cell tbl-sep">V.Sisa</th>
+          <th class="num-cell sortable ${_tokoSortCol==='a37'?'sort-active':''}" data-sort="a37">A37</th>
+          <th class="num-cell sortable ${_tokoSortCol==='a57'?'sort-active':''}" data-sort="a57">A57</th>
+          <th class="num-cell sortable ${_tokoSortCol==='s26'?'sort-active':''}" data-sort="s26">S26</th>
+        </tr>
+      </thead>
       <tbody>${rows}</tbody>
     </table></div>`;
   }

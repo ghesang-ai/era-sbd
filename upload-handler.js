@@ -1,246 +1,239 @@
-// upload-handler.js — SheetJS parser + JSON builder + POST to Apps Script
+// upload-handler.js — SheetJS parser for 3-sheet Samsung SBD Excel format
 
-/* ─── Column index map (0-based) ─── */
-const COL = {
-  SITE_CODE:0, SITE_DESC:1, LEADER:2, TSH:3, BU:4, STATUS:5, TERRITORY:6,
-  A37:{ BASE:7, TGT:8, MTD:9, EST:10, EST_PCT:11, SYARAT:12, V_AVAIL:13, V_PAKAI:14, W25:15, W26:16, W27:17, TGT_WK:19 },
-  A57:{ BASE:20, TGT:21, MTD:22, EST:23, EST_PCT:24, SYARAT:25, V_AVAIL:26, V_PAKAI:27, W25:28, W26:29, W27:30, TGT_WK:31 },
-  S26:{ BASE:32, TGT:33, MTD:34, EST:35, EST_PCT:36, SYARAT:37, V_AVAIL:38, V_PAKAI:39, W25:40, W26:41, W27:42, TGT_WK:43 },
-  KUOTA:44, TRUE_NOT:45,
-  REC_NAME:48,
-  REC_A37:{ TGT:49, MTD:50, EST:51, EST_PCT:52, V_AVAIL:53, VOUCHER:54 },
-  REC_A57:{ TGT:55, MTD:56, EST:57, EST_PCT:58, V_AVAIL:59, VOUCHER:60 },
-  REC_S26:{ TGT:61, MTD:62, EST:63, EST_PCT:64, V_AVAIL:65, VOUCHER:66 },
+/* ─── Column indices (0-based) — same for all 3 product sheets ─── */
+const C = {
+  SITE_CODE: 0, SITE_DESC: 1, LEADER: 2, TSH: 3, BU: 4, STATUS: 5, TERRITORY: 6,
+  TARGET: 8, TARGET_WK: 9,
+  EST: 10,      // MTD full = Estimasi Sell Out
+  MTD: 15,
+  W24: 16, W25: 17, W26: 18, W27: 19,
+  PCT_MTD: 26,  // %MTD tracking indicator
+  V_TERSEDIA: 29, V_SISA: 30,
+  V_W24: 31, V_W25: 32, V_W26: 33, V_W27: 34,
 };
 
-const HEADER_ROW = 4;
-const DATA_START  = 5;
+const SHEETS = {
+  a37: 'SBD - A37 (3)',
+  a57: 'SBD - A57 (3)',
+  s26: 'SBD - S26 (3)',
+};
 
-const n  = v => { if (v===undefined||v===null||v==='') return 0; if (typeof v==='string'&&v.trim().endsWith('%')) return parseFloat(v)/100; return +v||0; };
-const tr = v => (typeof v==='string') ? v.trim() : (v??'');
+const n  = v => { if (v === undefined || v === null || v === '') return 0; return +v || 0; };
+const tr = v => (typeof v === 'string') ? v.trim() : (v != null ? String(v) : '');
 
-function extractWeekLabel(val) {
-  const m = String(val||'').match(/W(\d+)/i);
-  return m ? 'W'+m[1] : '';
+function sheetToRows(wb, sheetName) {
+  const ws = wb.Sheets[sheetName];
+  if (!ws) throw new Error(`Sheet "${sheetName}" tidak ditemukan dalam file ini.`);
+  return XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
 }
 
-function findSkema3Sheet(wb) {
-  const name = wb.SheetNames.find(s => s.trim().startsWith('Skema 3'));
-  if (!name) throw new Error('Sheet "Skema 3" tidak ditemukan dalam file ini.');
-  return wb.Sheets[name];
-}
+function parseProductSheet(wb, sheetName) {
+  const rows = sheetToRows(wb, sheetName);
+  // Row 0 = header, Row 1+ = data
+  const stores = {};
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const siteCode = tr(row[C.SITE_CODE]);
+    if (!siteCode) continue;
 
-function sheetToRows(ws) {
-  return XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:false });
-}
+    const target    = n(row[C.TARGET]);
+    const est       = n(row[C.EST]);
+    const mtd       = n(row[C.MTD]);
+    const vTersedia = n(row[C.V_TERSEDIA]);
+    const vSisa     = n(row[C.V_SISA]);
 
-function buildTypeObj(row, C) {
-  return {
-    baseline:        n(row[C.BASE]),
-    target:          n(row[C.TGT]),
-    mtd:             n(row[C.MTD]),
-    est:             n(row[C.EST]),
-    estPct:          n(row[C.EST_PCT]),
-    syarat:          n(row[C.SYARAT]),
-    voucherTersedia: n(row[C.V_AVAIL]),
-    pakai:           n(row[C.V_PAKAI]),
-    w25:             n(row[C.W25]),
-    w26:             n(row[C.W26]),
-    w27:             n(row[C.W27]),
-    targetWeek:      n(row[C.TGT_WK]),
-  };
-}
-
-function buildRecapTypeObj(row, C) {
-  return {
-    target:       n(row[C.TGT]),
-    mtd:          n(row[C.MTD]),
-    est:          n(row[C.EST]),
-    estPct:       n(row[C.EST_PCT]),
-    voucherTersedia: n(row[C.V_AVAIL]),
-    voucher:      n(row[C.VOUCHER]),
-  };
+    stores[siteCode] = {
+      siteCode,
+      siteDesc:   tr(row[C.SITE_DESC]),
+      leader:     tr(row[C.LEADER]),
+      tsh:        tr(row[C.TSH]),
+      bu:         tr(row[C.BU]),
+      status:     tr(row[C.STATUS]),
+      territory:  tr(row[C.TERRITORY]),
+      target,
+      targetWeek: n(row[C.TARGET_WK]),
+      est,
+      estPct:     target > 0 ? est / target : 0,
+      mtd,
+      w24:        n(row[C.W24]),
+      w25:        n(row[C.W25]),
+      w26:        n(row[C.W26]),
+      w27:        n(row[C.W27]),
+      pctMtd:     n(row[C.PCT_MTD]),
+      voucherTersedia: vTersedia,
+      voucherSisa:     vSisa,
+      voucherPakai:    vTersedia - vSisa,
+      vW24: n(row[C.V_W24]),
+      vW25: n(row[C.V_W25]),
+      vW26: n(row[C.V_W26]),
+      vW27: n(row[C.V_W27]),
+    };
+  }
+  return stores;
 }
 
 /* ─── Main parser ─── */
 function parseExcel(arrayBuffer, filename) {
-  const wb   = XLSX.read(arrayBuffer, { type:'array' });
-  const ws   = findSkema3Sheet(wb);
-  const rows = sheetToRows(ws);
+  const wb = XLSX.read(arrayBuffer, { type: 'array' });
 
-  const headerRow = rows[HEADER_ROW] || [];
-
-  /* Extract dynamic week labels from header */
-  const weekLabels = {
-    w1: extractWeekLabel(headerRow[COL.A37.W25]) || 'W-1',
-    w2: extractWeekLabel(headerRow[COL.A37.W26]) || 'W-2',
-    w3: extractWeekLabel(headerRow[COL.A37.W27]) || 'W-3',
+  // Parse each product sheet
+  const byCode = {
+    a37: parseProductSheet(wb, SHEETS.a37),
+    a57: parseProductSheet(wb, SHEETS.a57),
+    s26: parseProductSheet(wb, SHEETS.s26),
   };
 
-  /* Parse stores */
+  // Collect all site codes (union of 3 sheets)
+  const allCodes = new Set([
+    ...Object.keys(byCode.a37),
+    ...Object.keys(byCode.a57),
+    ...Object.keys(byCode.s26),
+  ]);
+
+  if (allCodes.size === 0) throw new Error('Tidak ada data toko ditemukan. Periksa format file.');
+
+  // Build per-store array using A37 sheet for store metadata
   const stores = [];
-  for (let i = DATA_START; i < rows.length; i++) {
-    const row      = rows[i];
-    const siteCode = tr(row[COL.SITE_CODE]);
-    if (!siteCode) break;
+  for (const code of allCodes) {
+    const a37 = byCode.a37[code] || {};
+    const a57 = byCode.a57[code] || {};
+    const s26 = byCode.s26[code] || {};
 
-    const a37 = buildTypeObj(row, COL.A37);
-    const a57 = buildTypeObj(row, COL.A57);
-    const s26 = buildTypeObj(row, COL.S26);
+    // Use whichever sheet has the site metadata
+    const meta = byCode.a37[code] || byCode.a57[code] || byCode.s26[code];
 
-    // Compute prior week (before w25) for each type
-    a37.w0 = Math.max(a37.mtd - a37.w25 - a37.w26, 0);
-    a57.w0 = Math.max(a57.mtd - a57.w25 - a57.w26, 0);
-    s26.w0 = Math.max(s26.mtd - s26.w25 - s26.w26, 0);
+    const vUsed     = (a37.voucherPakai || 0) + (a57.voucherPakai || 0) + (s26.voucherPakai || 0);
+    const vTersedia = (a37.voucherTersedia || 0) + (a57.voucherTersedia || 0) + (s26.voucherTersedia || 0);
 
-    const vUsed     = a37.pakai + a57.pakai + s26.pakai;
-    const vTersedia = a37.voucherTersedia + a57.voucherTersedia + s26.voucherTersedia;
+    // w0 = sales before W24 (for WoW trend)
+    const a37w0 = Math.max((a37.mtd || 0) - (a37.w24 || 0) - (a37.w25 || 0) - (a37.w26 || 0), 0);
+    const a57w0 = Math.max((a57.mtd || 0) - (a57.w24 || 0) - (a57.w25 || 0) - (a57.w26 || 0), 0);
+    const s26w0 = Math.max((s26.mtd || 0) - (s26.w24 || 0) - (s26.w25 || 0) - (s26.w26 || 0), 0);
 
     stores.push({
-      siteCode,
-      siteDesc:  tr(row[COL.SITE_DESC]),
-      leader:    tr(row[COL.LEADER]),
-      tsh:       tr(row[COL.TSH]),
-      bu:        tr(row[COL.BU]),
-      status:    tr(row[COL.STATUS]),
-      territory: tr(row[COL.TERRITORY]),
-      a37, a57, s26,
-      kuotaAwal: n(row[COL.KUOTA]),
-      trueNot:   tr(row[COL.TRUE_NOT]),
-      // Computed totals
-      mtdTotal:    a37.mtd + a57.mtd + s26.mtd,
-      targetTotal: a37.target + a57.target + s26.target,
-      w25Total:    a37.w25 + a57.w25 + s26.w25,
-      w26Total:    a37.w26 + a57.w26 + s26.w26,
-      w0Total:     a37.w0 + a57.w0 + s26.w0,
+      siteCode: code,
+      siteDesc:  meta.siteDesc || '',
+      leader:    meta.leader || '',
+      tsh:       meta.tsh || '',
+      bu:        meta.bu || '',
+      status:    meta.status || '',
+      territory: meta.territory || '',
+      a37: { ...a37, w0: a37w0 },
+      a57: { ...a57, w0: a57w0 },
+      s26: { ...s26, w0: s26w0 },
+      mtdTotal:    (a37.mtd || 0) + (a57.mtd || 0) + (s26.mtd || 0),
+      targetTotal: (a37.target || 0) + (a57.target || 0) + (s26.target || 0),
+      w25Total:    (a37.w25 || 0) + (a57.w25 || 0) + (s26.w25 || 0),
+      w26Total:    (a37.w26 || 0) + (a57.w26 || 0) + (s26.w26 || 0),
+      w0Total:     a37w0 + a57w0 + s26w0,
       vUsed,
       vTersedia,
-      vSisa:       vTersedia - vUsed,
+      vSisa: vTersedia - vUsed,
     });
   }
 
-  if (stores.length === 0) throw new Error('Tidak ada data toko ditemukan. Periksa format file.');
-
-  /* Parse recap block */
-  const by_leader = [];
-  const by_tsh    = [];
-  let mode = null;
-
-  for (let i = 0; i < rows.length; i++) {
-    const row  = rows[i];
-    const name = tr(row[COL.REC_NAME]);
-    if (!name) continue;
-    const nameUpper = name.toUpperCase();
-    if (nameUpper === 'LOB')  { mode = 'leader'; continue; }
-    if (nameUpper === 'TSH')  { mode = 'tsh';    continue; }
-    if (nameUpper.includes('GRAND TOTAL') || nameUpper === 'TOTAL') continue;
-    if (mode === 'leader') {
-      by_leader.push({
-        name,
-        a37: buildRecapTypeObj(row, COL.REC_A37),
-        a57: buildRecapTypeObj(row, COL.REC_A57),
-        s26: buildRecapTypeObj(row, COL.REC_S26),
-      });
-    } else if (mode === 'tsh') {
-      const isVacant = nameUpper.includes('VACANT');
-      by_tsh.push({
-        name, isVacant,
-        a37: buildRecapTypeObj(row, COL.REC_A37),
-        a57: buildRecapTypeObj(row, COL.REC_A57),
-        s26: buildRecapTypeObj(row, COL.REC_S26),
-      });
-    }
-  }
-
-  /* Inject per-leader weekly breakdown from per-store data */
-  const leaderMap = {};
+  /* ─── Aggregate by leader (col2 = LOB/manager) ─── */
+  const leaderMapClean = {};
   for (const s of stores) {
-    if (!leaderMap[s.leader]) {
-      leaderMap[s.leader] = { storeCount:0, a37:{w25:0,w26:0,w0:0}, a57:{w25:0,w26:0,w0:0}, s26:{w25:0,w26:0,w0:0} };
+    const key = s.leader || '(Kosong)';
+    if (!leaderMapClean[key]) {
+      leaderMapClean[key] = { name: key, storeCount: 0, a37: zeroType(), a57: zeroType(), s26: zeroType() };
     }
-    leaderMap[s.leader].storeCount++;
+    const ldr = leaderMapClean[key];
+    ldr.storeCount++;
+    accumType(ldr.a37, s.a37);
+    accumType(ldr.a57, s.a57);
+    accumType(ldr.s26, s.s26);
+  }
+  // Compute estPct for each leader type
+  for (const ldr of Object.values(leaderMapClean)) {
     for (const t of ['a37','a57','s26']) {
-      leaderMap[s.leader][t].w25 += s[t].w25;
-      leaderMap[s.leader][t].w26 += s[t].w26;
-      leaderMap[s.leader][t].w0  += s[t].w0;
-    }
-  }
-  for (const ldr of by_leader) {
-    const wk = leaderMap[ldr.name] || { storeCount:0, a37:{w25:0,w26:0,w0:0}, a57:{w25:0,w26:0,w0:0}, s26:{w25:0,w26:0,w0:0} };
-    ldr.storeCount = wk.storeCount;
-    for (const t of ['a37','a57','s26']) {
-      ldr[t].w25 = wk[t].w25;
-      ldr[t].w26 = wk[t].w26;
-      ldr[t].w0  = wk[t].w0;
+      ldr[t].estPct   = ldr[t].target > 0 ? ldr[t].est / ldr[t].target : 0;
+      ldr[t].voucher  = ldr[t].voucherPakai; // alias used by app.js sumLeaders
     }
   }
 
-  /* KPI summary from by_leader totals (more accurate than summing stores) */
-  function sumLeaders(type) {
-    return by_leader.reduce((acc, l) => {
-      const t = l[type];
-      acc.target          += t.target;
-      acc.mtd             += t.mtd;
-      acc.est             += t.est;
-      acc.voucherTersedia += t.voucherTersedia;
-      acc.voucherPakai    += t.voucher;
-      acc.w25Total        += t.w25;
-      acc.w26Total        += t.w26;
-      acc.w0Total         += t.w0;
-      return acc;
-    }, { target:0, mtd:0, est:0, voucherTersedia:0, voucherPakai:0, w25Total:0, w26Total:0, w0Total:0 });
+  const by_leader = Object.values(leaderMapClean);
+
+  /* ─── Aggregate by TSH ─── */
+  const tshMapClean = {};
+  for (const s of stores) {
+    const key = s.tsh || '(Kosong)';
+    if (!tshMapClean[key]) {
+      tshMapClean[key] = { name: key, isVacant: key.toUpperCase().includes('VACANT'), storeCount: 0, a37: zeroType(), a57: zeroType(), s26: zeroType() };
+    }
+    const t = tshMapClean[key];
+    t.storeCount++;
+    accumType(t.a37, s.a37);
+    accumType(t.a57, s.a57);
+    accumType(t.s26, s.s26);
   }
+  for (const t of Object.values(tshMapClean)) {
+    for (const type of ['a37','a57','s26']) {
+      t[type].estPct  = t[type].target > 0 ? t[type].est / t[type].target : 0;
+      t[type].voucher = t[type].voucherPakai;
+    }
+  }
+  const by_tsh = Object.values(tshMapClean);
 
-  const a37s = sumLeaders('a37');
-  const a57s = sumLeaders('a57');
-  const s26s = sumLeaders('s26');
-
-  // Fallback to store sum if leader sum gives 0 (no recap block)
-  function sumStores(type) {
+  /* ─── KPI summary from store-level aggregation ─── */
+  function sumStoresType(type) {
     return stores.reduce((acc, s) => {
-      const t = s[type];
-      acc.target += t.target; acc.mtd += t.mtd; acc.est += t.est;
-      acc.voucherTersedia += t.voucherTersedia; acc.voucherPakai += t.pakai;
-      acc.w25Total += t.w25; acc.w26Total += t.w26; acc.w0Total += t.w0;
+      const t = s[type] || {};
+      acc.target          += t.target || 0;
+      acc.mtd             += t.mtd || 0;
+      acc.est             += t.est || 0;
+      acc.voucherTersedia += t.voucherTersedia || 0;
+      acc.voucherPakai    += t.voucherPakai || 0;
+      acc.w24Total        += t.w24 || 0;
+      acc.w25Total        += t.w25 || 0;
+      acc.w26Total        += t.w26 || 0;
+      acc.w0Total         += t.w0 || 0;
       return acc;
-    }, { target:0, mtd:0, est:0, voucherTersedia:0, voucherPakai:0, w25Total:0, w26Total:0, w0Total:0 });
+    }, { target:0, mtd:0, est:0, voucherTersedia:0, voucherPakai:0, w24Total:0, w25Total:0, w26Total:0, w0Total:0 });
   }
 
-  const useLeaderSum = by_leader.length > 0 && a37s.mtd > 0;
-  const fa37 = useLeaderSum ? a37s : sumStores('a37');
-  const fa57 = useLeaderSum ? a57s : sumStores('a57');
-  const fs26 = useLeaderSum ? s26s : sumStores('s26');
+  const fa37 = sumStoresType('a37');
+  const fa57 = sumStoresType('a57');
+  const fs26 = sumStoresType('s26');
 
-  function calcEstPct(s) { s.estPct = s.target > 0 ? s.est/s.target : 0; return s; }
+  fa37.estPct = fa37.target > 0 ? fa37.est / fa37.target : 0;
+  fa57.estPct = fa57.target > 0 ? fa57.est / fa57.target : 0;
+  fs26.estPct = fs26.target > 0 ? fs26.est / fs26.target : 0;
 
   const onTarget = stores.filter(s =>
-    s.a37.estPct >= 1 || s.a57.estPct >= 1 || s.s26.estPct >= 1
+    (s.a37.estPct || 0) >= 1 || (s.a57.estPct || 0) >= 1 || (s.s26.estPct || 0) >= 1
   ).length;
 
-  /* Voucher weekly rollup */
-  const voucher_weekly = {
-    a37:{ w25:fa37.w25Total, w26:fa37.w26Total, w27:0 },
-    a57:{ w25:fa57.w25Total, w26:fa57.w26Total, w27:0 },
-    s26:{ w25:fs26.w25Total, w26:fs26.w26Total, w27:0 },
-  };
+  /* ─── Voucher weekly rollup ─── */
+  const voucher_weekly = { a37:{w24:0,w25:0,w26:0,w27:0}, a57:{w24:0,w25:0,w26:0,w27:0}, s26:{w24:0,w25:0,w26:0,w27:0} };
   for (const s of stores) {
-    voucher_weekly.a37.w27 += s.a37.w27;
-    voucher_weekly.a57.w27 += s.a57.w27;
-    voucher_weekly.s26.w27 += s.s26.w27;
+    for (const type of ['a37','a57','s26']) {
+      const t = s[type] || {};
+      voucher_weekly[type].w24 += t.vW24 || 0;
+      voucher_weekly[type].w25 += t.vW25 || 0;
+      voucher_weekly[type].w26 += t.vW26 || 0;
+      voucher_weekly[type].w27 += t.vW27 || 0;
+    }
   }
+
+  /* ─── Extract period from filename ─── */
+  const dateMatch = filename.match(/(\d{1,2})\s*(Jan|Feb|Mar|Apr|Mei|Jun|Jul|Ags|Sep|Okt|Nov|Des)['\s]*(\d{4})/i);
+  const periode   = dateMatch ? `SBD Samsung ${dateMatch[0]}` : 'SBD Samsung 2026';
 
   const json = {
     meta: {
-      filename, uploadedAt: new Date().toISOString(),
-      periode: 'SBD Samsung 8–22 Juni 2026',
+      filename,
+      uploadedAt:  new Date().toISOString(),
+      periode,
       totalStores: stores.length,
-      weekLabels,
+      weekLabels:  { w1: 'W24', w2: 'W25', w3: 'W26' },
     },
     kpi_summary: {
-      a37: calcEstPct(fa37),
-      a57: calcEstPct(fa57),
-      s26: calcEstPct(fs26),
-      storesOnTarget: onTarget,
+      a37: fa37,
+      a57: fa57,
+      s26: fs26,
+      storesOnTarget:    onTarget,
       storesUnderTarget: stores.length - onTarget,
     },
     by_leader,
@@ -252,12 +245,32 @@ function parseExcel(arrayBuffer, filename) {
   return json;
 }
 
+/* ─── Helpers for aggregation ─── */
+function zeroType() {
+  return { target:0, mtd:0, est:0, estPct:0, voucherTersedia:0, voucherPakai:0, voucher:0, w24:0, w25:0, w26:0, w27:0, w0:0 };
+}
+
+function accumType(acc, t) {
+  if (!t) return;
+  acc.target          += t.target || 0;
+  acc.mtd             += t.mtd || 0;
+  acc.est             += t.est || 0;
+  acc.voucherTersedia += t.voucherTersedia || 0;
+  acc.voucherPakai    += t.voucherPakai || 0;
+  acc.w24             += t.w24 || 0;
+  acc.w25             += t.w25 || 0;
+  acc.w26             += t.w26 || 0;
+  acc.w27             += t.w27 || 0;
+  acc.w0              += t.w0 || 0;
+}
+
+
 /* ─── Preview ─── */
 function showPreview(json) {
   const el = document.getElementById('upload-preview');
   if (!el) return;
   const s = json.kpi_summary;
-  const fmt = v => (v*100).toFixed(1)+'%';
+  const fmt = v => (v * 100).toFixed(1) + '%';
   el.innerHTML = `
     <div class="preview-grid">
       <div class="preview-stat"><span class="label">Total Toko</span><span class="value">${json.meta.totalStores}</span></div>
@@ -267,19 +280,21 @@ function showPreview(json) {
       <div class="preview-stat"><span class="label">On-Target</span><span class="value on-target">${s.storesOnTarget} toko</span></div>
       <div class="preview-stat"><span class="label">File</span><span class="value filename">${json.meta.filename}</span></div>
     </div>`;
-  el.style.display='block';
+  el.style.display = 'block';
 }
 
 function pctClass(v) {
-  if (v>=1) return 'status-green'; if (v>=0.8) return 'status-amber'; return 'status-red';
+  if (v >= 1) return 'status-green';
+  if (v >= 0.8) return 'status-amber';
+  return 'status-red';
 }
 
 /* ─── POST to Apps Script ─── */
 async function postToServer(json, gasUrl, token) {
   const payload = JSON.stringify({ token, data: json });
   const res = await fetch(gasUrl, {
-    method:'POST', headers:{'Content-Type':'text/plain'},
-    body:payload, redirect:'follow',
+    method: 'POST', headers: { 'Content-Type': 'text/plain' },
+    body: payload, redirect: 'follow',
   });
   if (!res.ok) throw new Error(`Server error: ${res.status}`);
   const result = await res.json();
@@ -289,12 +304,12 @@ async function postToServer(json, gasUrl, token) {
 
 /* ─── Upload flow ─── */
 async function handleUpload(file, gasUrl, token, onSuccess) {
-  const msg  = document.getElementById('upload-msg');
-  const btn  = document.getElementById('btn-submit');
-  function setMsg(text, cls) { msg.textContent=text; msg.className='upload-msg '+(cls||''); }
+  const msg = document.getElementById('upload-msg');
+  const btn = document.getElementById('btn-submit');
+  function setMsg(text, cls) { msg.textContent = text; msg.className = 'upload-msg ' + (cls || ''); }
 
-  setMsg('Membaca file…','parsing');
-  if (btn) btn.disabled=true;
+  setMsg('Membaca file…', 'parsing');
+  if (btn) btn.disabled = true;
   window._pendingJson = null;
 
   try {
@@ -302,11 +317,11 @@ async function handleUpload(file, gasUrl, token, onSuccess) {
     const json = parseExcel(buf, file.name);
     window._pendingJson = json;
     showPreview(json);
-    setMsg(`✓ Parsed ${json.meta.totalStores} toko. Dashboard diperbarui — klik "Submit ke Server" untuk simpan permanen.`,'success');
-    if (btn) btn.disabled=false;
-    if (typeof window.__onPreview==='function') window.__onPreview(json);
-  } catch(err) {
-    setMsg('✗ '+err.message,'error');
+    setMsg(`✓ Parsed ${json.meta.totalStores} toko. Dashboard diperbarui — klik "Submit ke Server" untuk simpan permanen.`, 'success');
+    if (btn) btn.disabled = false;
+    if (typeof window.__onPreview === 'function') window.__onPreview(json);
+  } catch (err) {
+    setMsg('✗ ' + err.message, 'error');
     console.error(err);
   }
 }
@@ -316,24 +331,24 @@ async function submitToServer(gasUrl, token, onSuccess) {
   const btn  = document.getElementById('btn-submit');
   const msg  = document.getElementById('upload-msg');
   if (!json) return;
-  function setMsg(text, cls) { msg.textContent=text; msg.className='upload-msg '+(cls||''); }
-  btn.disabled=true;
-  setMsg('Mengirim ke server…','uploading');
+  function setMsg(text, cls) { msg.textContent = text; msg.className = 'upload-msg ' + (cls || ''); }
+  btn.disabled = true;
+  setMsg('Mengirim ke server…', 'uploading');
   let lastErr;
-  for (let attempt=1; attempt<=3; attempt++) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const result = await postToServer(json, gasUrl, token);
-      setMsg(`✓ Tersimpan! Upload: ${new Date(result.uploadedAt).toLocaleString('id-ID')}`,'done');
-      window._pendingJson=null;
-      if (typeof onSuccess==='function') onSuccess(json);
+      setMsg(`✓ Tersimpan! Upload: ${new Date(result.uploadedAt).toLocaleString('id-ID')}`, 'done');
+      window._pendingJson = null;
+      if (typeof onSuccess === 'function') onSuccess(json);
       return;
-    } catch(err) {
-      lastErr=err;
-      if (attempt<3) { setMsg(`Gagal, retry ${attempt}/3…`,'error'); await new Promise(r=>setTimeout(r,1500*attempt)); }
+    } catch (err) {
+      lastErr = err;
+      if (attempt < 3) { setMsg(`Gagal, retry ${attempt}/3…`, 'error'); await new Promise(r => setTimeout(r, 1500 * attempt)); }
     }
   }
-  setMsg('✗ Upload gagal: '+lastErr.message,'error');
-  btn.disabled=false;
+  setMsg('✗ Upload gagal: ' + lastErr.message, 'error');
+  btn.disabled = false;
 }
 
 /* ─── Drag-and-drop wiring ─── */
@@ -341,11 +356,11 @@ function initUploadZone(gasUrl, token, onSuccess) {
   const zone  = document.getElementById('upload-zone');
   const input = document.getElementById('file-input');
   if (!zone) return;
-  ['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.add('drag-over');}));
-  ['dragleave','drop'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.remove('drag-over');}));
-  zone.addEventListener('drop',e=>{const file=e.dataTransfer.files[0]; if(file)handleUpload(file,gasUrl,token,onSuccess);});
-  zone.addEventListener('click',()=>input&&input.click());
-  if (input) input.addEventListener('change',()=>{if(input.files[0])handleUpload(input.files[0],gasUrl,token,onSuccess);});
+  ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('drag-over'); }));
+  ['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('drag-over'); }));
+  zone.addEventListener('drop', e => { const file = e.dataTransfer.files[0]; if (file) handleUpload(file, gasUrl, token, onSuccess); });
+  zone.addEventListener('click', () => input && input.click());
+  if (input) input.addEventListener('change', () => { if (input.files[0]) handleUpload(input.files[0], gasUrl, token, onSuccess); });
   const btn = document.getElementById('btn-submit');
-  if (btn) btn.addEventListener('click',()=>submitToServer(gasUrl,token,onSuccess));
+  if (btn) btn.addEventListener('click', () => submitToServer(gasUrl, token, onSuccess));
 }

@@ -279,7 +279,7 @@ function renderOverview(data) {
   const lobEl = document.getElementById('ov-lob-table');
   if (lobEl && leaders.length) {
     const totalMtd = leaders.reduce((s,l)=>s+(l.a37?.mtd||0)+(l.a57?.mtd||0)+(l.s26?.mtd||0),0)||1;
-    lobEl.innerHTML = `<table class="toko-table">
+    lobEl.innerHTML = `<div class="ov-lob-table-wrap" id="ov-lob-table"><table class="toko-table">
       <thead><tr><th>LOB / Leader</th><th class="num-cell">A37</th><th class="num-cell">A57</th><th class="num-cell">S26</th><th class="num-cell">MTD Total</th><th class="num-cell">%Target</th><th class="num-cell">Toko</th></tr></thead>
       <tbody>
       ${leaders.map(l=>{
@@ -298,7 +298,7 @@ function renderOverview(data) {
         </tr>`;
       }).join('')}
       </tbody>
-    </table>`;
+    </table></div>`;
   }
 }
 

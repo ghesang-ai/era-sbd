@@ -670,4 +670,23 @@ body {
   .hero-inner { flex-direction:column; gap:16px; }
   .hero-meta  { align-items:flex-start; }
   .toko-controls { flex-direction:column; align-items:flex-start; }
+
+  /* Topbar mobile: sembunyikan last-updated, kompakkan layout */
+  .last-updated { display:none; }
+  .topbar-main-title { font-size:13px; }
+  .topbar-sub-title { font-size:10px; }
+  .topbar-logo-img { height:22px; }
+  .topbar { padding:10px 0; }
+  .btn-upload { font-size:11px; padding:7px 12px; }
+
+  /* LOB table mobile: hide kolom detail, tampilkan lebih ringkas */
+  .ov-lob-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  #ov-lob-table table { min-width:420px; font-size:11px; }
+  #ov-lob-table th, #ov-lob-table td { padding:6px 6px; }
+
+  /* LOB actual rows mobile */
+  .ov-lob-actual-row { flex-wrap:wrap; gap:4px; }
+  .ov-lob-name { min-width:unset; width:100%; font-size:12px; }
+  .ov-lob-mtd { min-width:unset; }
+  .ov-lob-breakdown { text-align:left; width:100%; margin-top:2px; }
 }

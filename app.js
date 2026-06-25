@@ -215,6 +215,7 @@ function renderOverview(data) {
   }
 
   // Angka aktual MTD per LOB (update tabel)
+  const leaders = (data.by_leader||[]).filter(l=>l.name!=='Grand Total');
   const lobMtdEl = document.getElementById('ov-lob-actuals');
   if (lobMtdEl && leaders.length) {
     lobMtdEl.innerHTML = leaders.map(l=>{
@@ -258,7 +259,6 @@ function renderOverview(data) {
   }
 
   // Chart 2: MTD per LOB (stacked A37+A57+S26)
-  const leaders = (data.by_leader||[]).filter(l=>l.name!=='Grand Total');
   const ctxL = document.getElementById('ov-lob-chart');
   if (ctxL && leaders.length) {
     _charts['ov-lob-chart'] = new Chart(ctxL, {

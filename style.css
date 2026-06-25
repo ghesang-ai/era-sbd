@@ -286,6 +286,22 @@ body {
   display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;
 }
 .ov-chart-card canvas { max-height:220px; }
+.ov-voucher-weekly { margin-top:10px; }
+.ov-voucher-wk-table { width:100%; border-collapse:collapse; font-size:12px; }
+.ov-voucher-wk-table th { padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; text-align:left; border-bottom:1px solid var(--border); }
+.ov-voucher-wk-table td { padding:5px 10px; color:var(--text-secondary); border-bottom:0.5px solid var(--border); }
+.ov-voucher-wk-table .num-cell { text-align:right; }
+.ov-progress-nums { margin-top:10px; }
+.ov-nums-table { width:100%; border-collapse:collapse; font-size:12px; }
+.ov-nums-table th { padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; text-align:left; border-bottom:1px solid var(--border); }
+.ov-nums-table td { padding:5px 10px; color:var(--text-secondary); border-bottom:0.5px solid var(--border); }
+.ov-nums-table .num-cell { text-align:right; }
+.ov-lob-actuals { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+.ov-lob-actual-row { display:flex; align-items:center; gap:8px; font-size:12px; padding:6px 8px; background:var(--bg-card2); border-radius:6px; }
+.ov-lob-name { font-weight:700; color:var(--text-primary); min-width:90px; }
+.ov-lob-mtd { font-weight:600; color:var(--blue); min-width:70px; }
+.ov-lob-pct { font-weight:700; min-width:55px; text-align:right; }
+.ov-lob-breakdown { font-size:11px; color:var(--text-muted); flex:1; text-align:right; }
 .toko-sub-lbl { font-size:11px; color:var(--text-muted); margin-top:2px; }
 
 /* ═══ PER TIPE ═══ */
@@ -399,6 +415,8 @@ body {
 .lob-bar-fill { height:100%; border-radius:2px; transition:width 0.6s ease; }
 .lob-bar-val  { font-size:10px; color:var(--text-secondary); min-width:24px; text-align:right; }
 .lob-sub-wow  { font-size:11px; font-weight:700; margin-top:6px; }
+.lob-sub-voucher { font-size:10px; color:var(--text-muted); margin-top:4px; }
+.lob-v-lbl { font-weight:700; margin-right:4px; }
 
 /* ═══ PER TOKO TAB ═══ */
 .toko-controls {
@@ -607,6 +625,23 @@ body {
 .adm-img-thumb { max-width:100%; max-height:100px; border-radius:var(--radius-sm); }
 .adm-img-remove { position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.6); border:none; color:#fff; cursor:pointer; padding:2px 7px; border-radius:4px; font-size:11px; }
 .admin-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:16px; border-top:0.5px solid var(--border); }
+
+/* ═══ WOW CONTROLS ═══ */
+.wow-controls { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 18px; margin-bottom:18px; display:flex; flex-direction:column; gap:10px; }
+.wow-filter-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.wow-filter-label { font-size:11px; color:var(--text-muted); font-weight:600; white-space:nowrap; width:140px; }
+.wow-bu-filters, .wow-pair-filters { display:flex; gap:6px; flex-wrap:wrap; }
+.wow-bu-tag { font-size:9px; background:var(--blue)22; color:var(--blue); border-radius:3px; padding:1px 4px; }
+.wow-store-detail { font-size:10px; color:var(--text-muted); margin-bottom:4px; }
+
+/* ═══ ZERO SALES ═══ */
+.zero-sales-wrap { display:flex; flex-direction:column; gap:14px; }
+.zero-sales-block { padding:10px 14px; background:var(--bg); border-radius:8px; border:1px solid var(--border); }
+.zero-sales-type { font-size:12px; font-weight:700; margin-bottom:8px; }
+.zero-sales-list { display:flex; flex-wrap:wrap; gap:6px; }
+.zero-sales-item { display:inline-flex; align-items:center; gap:4px; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:3px 8px; font-size:10px; font-family:monospace; }
+.zero-sales-name { font-family:inherit; font-size:10px; color:var(--text-muted); }
+.empty-state-sm { text-align:center; padding:20px; color:var(--text-muted); font-size:12px; }
 
 /* ═══ FOOTER ═══ */
 .footer { text-align:center; padding:30px 0 10px; font-size:11px; color:var(--text-muted); }

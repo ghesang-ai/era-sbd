@@ -167,6 +167,69 @@ function renderOverview(data) {
   const lblV=document.getElementById('lbl-voucher-util');
   if(lblV) lblV.textContent=fmtPct(vT>0?vP/vT:0)+' utilisasi voucher';
 
+  // Voucher weekly breakdown
+  const vwEl = document.getElementById('ov-voucher-weekly');
+  if (vwEl) {
+    const weeks = [
+      { wk:'W24', pakai: (ks.a37.vW24Total||0)+(ks.a57.vW24Total||0)+(ks.s26.vW24Total||0), kuota: null },
+      { wk:'W25', pakai: (ks.a37.vW25Total||0)+(ks.a57.vW25Total||0)+(ks.s26.vW25Total||0), kuota: (ks.a37.vKuotaW25||0)+(ks.a57.vKuotaW25||0)+(ks.s26.vKuotaW25||0) },
+      { wk:'W26', pakai: (ks.a37.vW26Total||0)+(ks.a57.vW26Total||0)+(ks.s26.vW26Total||0), kuota: (ks.a37.vKuotaW26||0)+(ks.a57.vKuotaW26||0)+(ks.s26.vKuotaW26||0) },
+      { wk:'W27', pakai: (ks.a37.vW27Total||0)+(ks.a57.vW27Total||0)+(ks.s26.vW27Total||0), kuota: (ks.a37.vKuotaW27||0)+(ks.a57.vKuotaW27||0)+(ks.s26.vKuotaW27||0) },
+    ];
+    vwEl.innerHTML = `<table class="ov-voucher-wk-table">
+      <thead><tr><th>Minggu</th><th class="num-cell">Terpakai</th><th class="num-cell">Kuota</th><th class="num-cell">Sisa Kuota</th><th class="num-cell">Utilisasi</th></tr></thead>
+      <tbody>${weeks.map(w=>{
+        const sisa = w.kuota!=null ? w.kuota-w.pakai : null;
+        const util = w.kuota>0 ? w.pakai/w.kuota : null;
+        const sisCls = sisa!=null&&sisa<=0 ? 'pct-red' : '';
+        return `<tr>
+          <td><strong>${w.wk}</strong></td>
+          <td class="num-cell">${fmtN(w.pakai)}</td>
+          <td class="num-cell">${w.kuota!=null?fmtN(w.kuota):'—'}</td>
+          <td class="num-cell ${sisCls}">${sisa!=null?fmtN(sisa):'—'}</td>
+          <td class="num-cell">${util!=null?fmtPct(util):'—'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+
+  // Angka aktual di bawah progress chart
+  const progNumEl = document.getElementById('ov-progress-nums');
+  if (progNumEl) {
+    progNumEl.innerHTML = `<table class="ov-nums-table">
+      <thead><tr><th>Tipe</th><th class="num-cell">Target</th><th class="num-cell">Est.SellOut</th><th class="num-cell">MTD</th><th class="num-cell">Achievement</th></tr></thead>
+      <tbody>
+        ${['a37','a57','s26'].map(t=>{
+          const k=ks[t]; const color=t==='a37'?'#1428A0':t==='a57'?'#F59E0B':'#8B5CF6';
+          const name=t==='a37'?'Galaxy A37':t==='a57'?'Galaxy A57':'Galaxy S26';
+          return `<tr>
+            <td><span style="color:${color};font-weight:700">${name}</span></td>
+            <td class="num-cell">${fmtN(k.target)}</td>
+            <td class="num-cell">${fmtN(k.est)}</td>
+            <td class="num-cell">${fmtN(k.mtd)}</td>
+            <td class="num-cell ${clsPct(k.estPct)}">${fmtPct(k.estPct)}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+  }
+
+  // Angka aktual MTD per LOB (update tabel)
+  const lobMtdEl = document.getElementById('ov-lob-actuals');
+  if (lobMtdEl && leaders.length) {
+    lobMtdEl.innerHTML = leaders.map(l=>{
+      const mtd=(l.a37?.mtd||0)+(l.a57?.mtd||0)+(l.s26?.mtd||0);
+      const tgt=(l.a37?.target||0)+(l.a57?.target||0)+(l.s26?.target||0);
+      const pct=tgt>0?mtd/tgt:0;
+      return `<div class="ov-lob-actual-row">
+        <span class="ov-lob-name">${l.name}</span>
+        <span class="ov-lob-mtd">${fmtN(mtd)} unit</span>
+        <span class="ov-lob-pct ${clsPct(pct)}">${fmtPct(pct)}</span>
+        <span class="ov-lob-breakdown">A37:${fmtN(l.a37?.mtd||0)} · A57:${fmtN(l.a57?.mtd||0)} · S26:${fmtN(l.s26?.mtd||0)}</span>
+      </div>`;
+    }).join('');
+  }
+
   countUp(document.getElementById('kv-on-target'),ks.storesOnTarget);
   countUp(document.getElementById('kv-under-target'),ks.storesUnderTarget);
   const tot=document.getElementById('kv-total-stores');
@@ -255,22 +318,17 @@ function renderPerTipe(data) {
   function typeName(t) { return t==='a37'?'GALAXY A37':t==='a57'?'GALAXY A57':'GALAXY S26'; }
 
   function buildCard(type) {
-    const ks_t = ks[type];
-    const color = typeColor(type);
-    const pct   = ks_t.estPct;
-    const pctCls= pct>=1?'pct-green':pct>=0.8?'pct-amber':'pct-red';
-    const gap   = ks_t.target - ks_t.est;
-    const w1Total = ks_t.w25Total||0;
-    const w2Total = ks_t.w26Total||0;
-    const w0Total = ks_t.w0Total||Math.max(ks_t.mtd-w1Total-w2Total,0);
-    const wowDelta = w1Total - w0Total;
-    const vSisa   = ks_t.voucherTersedia - ks_t.voucherPakai;
-
-    // Top 15 stores by current week for chart
-    const topStores = stores
-      .filter(s=>s[type].w25>0||s[type].mtd>0)
-      .sort((a,b)=>b[type].w25-a[type].w25)
-      .slice(0,15);
+    const ks_t  = ks[type];
+    const color  = typeColor(type);
+    const pct    = ks_t.estPct;
+    const pctCls = pct>=1?'pct-green':pct>=0.8?'pct-amber':'pct-red';
+    const gap    = ks_t.target - ks_t.est;
+    const w24T   = ks_t.w24Total||0;
+    const w25T   = ks_t.w25Total||0;
+    const w26T   = ks_t.w26Total||0;
+    const w27T   = ks_t.w27Total||0;
+    const vSisa  = ks_t.voucherTersedia - ks_t.voucherPakai;
+    const wowDelta = w25T - w24T;
 
     return `
     <div class="pt-card pt-card-${type}" style="--pt-color:${color}">
@@ -295,18 +353,23 @@ function renderPerTipe(data) {
       </div>
       <div class="pt-weekly-row">
         <div class="pt-week-box">
-          <div class="pt-wk-lbl">Sebelum ${wl.w1}</div>
-          <div class="pt-wk-val">${fmtN(w0Total)}</div>
+          <div class="pt-wk-lbl">W24</div>
+          <div class="pt-wk-val">${fmtN(w24T)}</div>
           <div class="pt-wk-sub">unit</div>
         </div>
         <div class="pt-week-box pt-week-curr">
-          <div class="pt-wk-lbl">${wl.w1}</div>
-          <div class="pt-wk-val" style="color:${color}">${fmtN(w1Total)}</div>
-          <div class="pt-wk-sub ${clsWoW(wowDelta)}">${fmtWoW(wowDelta)} vs sbl</div>
+          <div class="pt-wk-lbl">W25</div>
+          <div class="pt-wk-val" style="color:${color}">${fmtN(w25T)}</div>
+          <div class="pt-wk-sub ${clsWoW(wowDelta)}">${fmtWoW(wowDelta)} vs W24</div>
         </div>
         <div class="pt-week-box">
-          <div class="pt-wk-lbl">${wl.w2}</div>
-          <div class="pt-wk-val muted">${w2Total>0?fmtN(w2Total):'–'}</div>
+          <div class="pt-wk-lbl">W26</div>
+          <div class="pt-wk-val">${w26T>0?fmtN(w26T):'–'}</div>
+          <div class="pt-wk-sub muted">running</div>
+        </div>
+        <div class="pt-week-box">
+          <div class="pt-wk-lbl">W27</div>
+          <div class="pt-wk-val muted">${w27T>0?fmtN(w27T):'–'}</div>
           <div class="pt-wk-sub muted">running</div>
         </div>
         <div class="pt-week-box pt-week-voucher">
@@ -317,8 +380,9 @@ function renderPerTipe(data) {
       </div>
       <div class="pt-chart-wrap">
         <div class="pt-chart-legend">
-          <span class="pt-leg-item"><span class="pt-leg-dot" style="background:#4B5A8B"></span>${wl.w1} Prev</span>
-          <span class="pt-leg-item"><span class="pt-leg-dot" style="background:${color}"></span>${wl.w1} Unit</span>
+          <span class="pt-leg-item"><span class="pt-leg-dot" style="background:#CBD5E1"></span>W24</span>
+          <span class="pt-leg-item"><span class="pt-leg-dot" style="background:${color}CC"></span>W25</span>
+          <span class="pt-leg-item"><span class="pt-leg-dot" style="background:${color}66"></span>W26</span>
         </div>
         <div class="pt-chart-canvas-wrap">
           <canvas id="chart-pt-${type}"></canvas>
@@ -339,25 +403,24 @@ function renderPerTipe(data) {
     ['a37','a57','s26'].forEach(type=>{
       const color = typeColor(type);
       const topStores = stores
-        .filter(s=>s[type].w25>0||s[type].mtd>0)
+        .filter(s=>s[type].w25>0||s[type].w24>0||s[type].mtd>0)
         .sort((a,b)=>b[type].w25-a[type].w25)
         .slice(0,15);
       const ctx = document.getElementById(`chart-pt-${type}`);
       if (!ctx || !topStores.length) return;
-      const labels  = topStores.map(s=>shortName(s.siteDesc));
-      const w0vals  = topStores.map(s=>s[type].w0||0);
-      const w25vals = topStores.map(s=>s[type].w25||0);
+      const labels = topStores.map(s=>shortName(s.siteDesc));
       destroyChart(`pt-${type}`);
       _charts[`pt-${type}`] = new Chart(ctx, {
         type:'bar',
         data:{
           labels,
           datasets:[
-            { label:`Sebelum ${(data.meta?.weekLabels||{}).w1||'W-1'}`, data:w0vals, backgroundColor:'#E2E8F0', borderRadius:3 },
-            { label:(data.meta?.weekLabels||{}).w1||'W-1', data:w25vals, backgroundColor:color+'CC', borderRadius:3 },
+            { label:'W24', data:topStores.map(s=>s[type].w24||0), backgroundColor:'#CBD5E1', borderRadius:3 },
+            { label:'W25', data:topStores.map(s=>s[type].w25||0), backgroundColor:color+'CC', borderRadius:3 },
+            { label:'W26', data:topStores.map(s=>s[type].w26||0), backgroundColor:color+'66', borderRadius:3 },
           ],
         },
-        options:{ ...chartOpts({indexAxis:'y',scales:true,legend:false}), aspectRatio:undefined },
+        options:{ ...chartOpts({indexAxis:'y',scales:true,legend:true}), aspectRatio:undefined },
       });
     });
   });
@@ -405,7 +468,7 @@ function renderVoucherTab(data) {
   function topSisaRows(type, limit=15) {
     const color = type==='a37'?'#1428A0':type==='a57'?'#F59E0B':'#8B5CF6';
     const sorted = stores
-      .map(s=>({...s, sisaType: s[type].voucherTersedia - s[type].pakai, paiType: s[type].pakai}))
+      .map(s=>({...s, sisaType: s[type].voucherSisa ?? (s[type].voucherTersedia - s[type].voucherPakai), paiType: s[type].voucherPakai||0}))
       .filter(s=>s.sisaType>0)
       .sort((a,b)=>b.sisaType-a.sisaType)
       .slice(0,limit);
@@ -517,32 +580,45 @@ function renderPerLOB(data) {
   const wl = data.meta?.weekLabels || { w1:'W-1', w2:'W-curr' };
 
   function lobCard(ldr) {
-    const total = (ldr.a37.mtd||0)+(ldr.a57.mtd||0)+(ldr.s26.mtd||0);
-    const wowTotal = (ldr.a37.w25||0)+(ldr.a57.w25||0)+(ldr.s26.w25||0)
-                   - (ldr.a37.w0||0)-(ldr.a57.w0||0)-(ldr.s26.w0||0);
+    const total    = (ldr.a37.mtd||0)+(ldr.a57.mtd||0)+(ldr.s26.mtd||0);
+    const totalTgt = (ldr.a37.target||0)+(ldr.a57.target||0)+(ldr.s26.target||0);
+    const totalPct = totalTgt>0?total/totalTgt:0;
+    const w24Total = (ldr.a37.w24||0)+(ldr.a57.w24||0)+(ldr.s26.w24||0);
+    const w25Total = (ldr.a37.w25||0)+(ldr.a57.w25||0)+(ldr.s26.w25||0);
+    const wowTotal = w25Total - w24Total;
 
     function subCard(type) {
       const t   = ldr[type];
       const col = type==='a37'?'#1428A0':type==='a57'?'#F59E0B':'#8B5CF6';
-      const wow = (t.w25||0)-(t.w0||0);
-      const maxBar = Math.max(t.w0||0,t.w25||0,1);
+      const maxBar = Math.max(t.w24||0, t.w25||0, t.w26||0, 1);
+      const wow24_25 = (t.w25||0)-(t.w24||0);
+      const wow25_26 = (t.w26||0)-(t.w25||0);
       return `
       <div class="lob-sub-card" style="--lob-color:${col}">
         <div class="lob-sub-type">${type.toUpperCase()}</div>
         <div class="lob-sub-mtd">${fmtN(t.mtd)}</div>
         <div class="lob-sub-bars">
           <div class="lob-bar-row">
-            <span class="lob-bar-lbl">${wl.w1}</span>
-            <div class="lob-bar-wrap"><div class="lob-bar-fill" style="width:${Math.min((t.w0||0)/maxBar*100,100).toFixed(1)}%;background:#2A3568"></div></div>
-            <span class="lob-bar-val">${fmtN(t.w0||0)}</span>
+            <span class="lob-bar-lbl">W24</span>
+            <div class="lob-bar-wrap"><div class="lob-bar-fill" style="width:${Math.min((t.w24||0)/maxBar*100,100).toFixed(1)}%;background:#CBD5E1"></div></div>
+            <span class="lob-bar-val">${fmtN(t.w24||0)}</span>
           </div>
           <div class="lob-bar-row">
-            <span class="lob-bar-lbl">${wl.w1}</span>
+            <span class="lob-bar-lbl">W25</span>
             <div class="lob-bar-wrap"><div class="lob-bar-fill" style="width:${Math.min((t.w25||0)/maxBar*100,100).toFixed(1)}%;background:${col}CC"></div></div>
             <span class="lob-bar-val">${fmtN(t.w25||0)}</span>
           </div>
+          <div class="lob-bar-row">
+            <span class="lob-bar-lbl">W26</span>
+            <div class="lob-bar-wrap"><div class="lob-bar-fill" style="width:${Math.min((t.w26||0)/maxBar*100,100).toFixed(1)}%;background:${col}66"></div></div>
+            <span class="lob-bar-val">${fmtN(t.w26||0)}</span>
+          </div>
         </div>
-        <div class="lob-sub-wow ${clsWoW(wow)}">${fmtWoW(wow)} WoW</div>
+        <div class="lob-sub-voucher">
+          <span class="lob-v-lbl">Voucher</span>
+          <span>W24:${fmtN(t.vW24||0)} W25:${fmtN(t.vW25||0)} W26:${fmtN(t.vW26||0)}</span>
+        </div>
+        <div class="lob-sub-wow ${clsWoW(wow24_25)}">${fmtWoW(wow24_25)} W24→W25 &nbsp;|&nbsp; <span class="${clsWoW(wow25_26)}">${fmtWoW(wow25_26)} W25→W26</span></div>
       </div>`;
     }
 
@@ -555,8 +631,8 @@ function renderPerLOB(data) {
         </div>
         <div class="lob-total-block">
           <div class="lob-total-val">${fmtN(total)}</div>
-          <div class="lob-total-sub">MTD total</div>
-          <div class="lob-wow-badge ${clsWoW(wowTotal)}">${fmtWoW(wowTotal)} WoW (${wl.w1}→${wl.w1})</div>
+          <div class="lob-total-sub">MTD total · <span class="${clsPct(totalPct)}">${fmtPct(totalPct)}</span></div>
+          <div class="lob-wow-badge ${clsWoW(wowTotal)}">${fmtWoW(wowTotal)} WoW (W24→W25)</div>
         </div>
       </div>
       <div class="lob-sub-grid">
@@ -596,7 +672,7 @@ function renderPerLOB(data) {
         options:chartOpts({scales:true,legend:true}),
       });
     }
-    // WoW chart
+    // WoW chart W24/W25/W26
     const ctxW = document.getElementById('chart-lob-wow');
     if (ctxW) {
       _charts['lob-wow'] = new Chart(ctxW,{
@@ -604,8 +680,9 @@ function renderPerLOB(data) {
         data:{
           labels:lobNames,
           datasets:[
-            { label:`Sbl ${wl.w1}`, data:leaders.map(l=>(l.a37.w0||0)+(l.a57.w0||0)+(l.s26.w0||0)), backgroundColor:'#94A3B888', borderRadius:4 },
-            { label:wl.w1, data:leaders.map(l=>(l.a37.w25||0)+(l.a57.w25||0)+(l.s26.w25||0)), backgroundColor:'#1428A088', borderRadius:4 },
+            { label:'W24', data:leaders.map(l=>(l.a37.w24||0)+(l.a57.w24||0)+(l.s26.w24||0)), backgroundColor:'#CBD5E188', borderRadius:4 },
+            { label:'W25', data:leaders.map(l=>(l.a37.w25||0)+(l.a57.w25||0)+(l.s26.w25||0)), backgroundColor:'#1428A088', borderRadius:4 },
+            { label:'W26', data:leaders.map(l=>(l.a37.w26||0)+(l.a57.w26||0)+(l.s26.w26||0)), backgroundColor:'#00B2E388', borderRadius:4 },
           ],
         },
         options:chartOpts({scales:true,legend:true}),
@@ -748,46 +825,64 @@ function renderPerToko(data) {
 /* ══════════════════════════════════════════
    RANKING WOW TAB
 ══════════════════════════════════════════ */
+let _wowBU   = 'all';
+let _wowPair = 'w24w25';
+
 function renderRankingWoW(data) {
   const el = document.getElementById('ranking-content');
   if (!el || !data) return;
-  destroyChart('wow-chart');
+  destroyCharts('wow-chart','wow-top12');
 
-  const stores = data.stores||[];
-  const wl     = data.meta?.weekLabels||{w1:'W-1',w2:'W-curr'};
-  const leaders = data.by_leader||[];
+  const allStores = data.stores||[];
+  const leaders   = data.by_leader||[];
 
-  // Compute per-store WoW (w25Total = last complete week, w0Total = prior)
-  const enriched = stores.map(s=>({
-    ...s,
-    wowAbs:  s.w25Total - s.w0Total,
-    wowPct:  s.w0Total>0 ? (s.w25Total-s.w0Total)/s.w0Total : 0,
-  }));
+  // BU list from stores
+  const buList = [...new Set(allStores.map(s=>s.bu||'').filter(Boolean))].sort();
 
-  const growers  = enriched.filter(s=>s.w0Total>0||s.w25Total>0).sort((a,b)=>b.wowAbs-a.wowAbs).slice(0,3);
-  const declines = enriched.filter(s=>s.w0Total>0||s.w25Total>0).sort((a,b)=>a.wowAbs-b.wowAbs).slice(0,3);
-  const growPct  = enriched.filter(s=>s.w0Total>=2).sort((a,b)=>b.wowPct-a.wowPct).slice(0,3);
-  const getVUsed = s => s.vUsed ?? ((s.a37?.pakai||0)+(s.a57?.pakai||0)+(s.s26?.pakai||0));
-  const vcTopW   = [...enriched].sort((a,b)=>getVUsed(b)-getVUsed(a)).slice(0,3);
+  // Filter by BU
+  const stores = _wowBU==='all' ? allStores : allStores.filter(s=>s.bu===_wowBU);
+
+  // WoW pair config
+  const pairCfg = {
+    w24w25: { prev:'w24Total', curr:'w25Total', label:'W24 → W25' },
+    w25w26: { prev:'w25Total', curr:'w26Total', label:'W25 → W26' },
+    w26w27: { prev:'w26Total', curr:'w27Total', label:'W26 → W27' },
+    total:  { prev:'w24Total', curr:'w27Total', label:'Total W24→W27' },
+  };
+  const pair = pairCfg[_wowPair] || pairCfg.w24w25;
+
+  const enriched = stores.map(s=>{
+    const prev = s[pair.prev]||0;
+    const curr = s[pair.curr]||0;
+    return { ...s, wowPrev:prev, wowCurr:curr, wowAbs:curr-prev, wowPct:prev>0?(curr-prev)/prev:0 };
+  });
+
+  const active = enriched.filter(s=>s.wowPrev>0||s.wowCurr>0);
+  const growers  = [...active].sort((a,b)=>b.wowAbs-a.wowAbs).slice(0,3);
+  const declines = [...active].sort((a,b)=>a.wowAbs-b.wowAbs).slice(0,3);
+  const growPct  = enriched.filter(s=>s.wowPrev>=2).sort((a,b)=>b.wowPct-a.wowPct).slice(0,3);
+  const vcTopW   = [...enriched].sort((a,b)=>(b.vUsed||0)-(a.vUsed||0)).slice(0,3);
 
   function wowStoreCard(s, color) {
-    const maxBar = Math.max(s.w0Total,s.w25Total,1);
+    const maxBar = Math.max(s.wowPrev, s.wowCurr, 1);
+    const prevLbl = pair.label.split(' → ')[0]||'Prev';
+    const currLbl = pair.label.split(' → ')[1]||'Curr';
     return `
     <div class="wow-store-item">
       <div class="wow-store-name">${shortName(s.siteDesc)}</div>
-      <div class="wow-store-sub">${s.leader} · ${s.siteCode}</div>
+      <div class="wow-store-sub">${s.leader} · ${s.siteCode} · <span class="wow-bu-tag">${s.bu||''}</span></div>
+      <div class="wow-store-detail">MTD:${fmtN(s.mtdTotal)} · Est:${fmtN((s.a37?.est||0)+(s.a57?.est||0)+(s.s26?.est||0))}</div>
       <div class="wow-bars">
-        <div class="wow-bar-row"><span class="wow-bar-lbl">W-prev</span><div class="wow-bar-outer"><div class="wow-bar-fill" style="width:${Math.min(s.w0Total/maxBar*100,100).toFixed(1)}%;background:#2A3568"></div></div><span class="wow-bar-end">${s.w0Total}</span></div>
-        <div class="wow-bar-row"><span class="wow-bar-lbl">${wl.w1}</span><div class="wow-bar-outer"><div class="wow-bar-fill" style="width:${Math.min(s.w25Total/maxBar*100,100).toFixed(1)}%;background:${color}"></div></div><span class="wow-bar-end">${s.w25Total}</span></div>
+        <div class="wow-bar-row"><span class="wow-bar-lbl">${prevLbl}</span><div class="wow-bar-outer"><div class="wow-bar-fill" style="width:${Math.min(s.wowPrev/maxBar*100,100).toFixed(1)}%;background:#94A3B8"></div></div><span class="wow-bar-end">${s.wowPrev}</span></div>
+        <div class="wow-bar-row"><span class="wow-bar-lbl">${currLbl}</span><div class="wow-bar-outer"><div class="wow-bar-fill" style="width:${Math.min(s.wowCurr/maxBar*100,100).toFixed(1)}%;background:${color}"></div></div><span class="wow-bar-end">${s.wowCurr}</span></div>
       </div>
       <div class="wow-delta ${clsWoW(s.wowAbs)}">${fmtWoW(s.wowAbs)}</div>
     </div>`;
   }
 
-  // Per-LOB top & bottom
   function lobWoWCard(ldr) {
     const storesOfLdr = enriched.filter(s=>s.leader===ldr.name);
-    const top = storesOfLdr.sort((a,b)=>b.wowAbs-a.wowAbs)[0];
+    const top = [...storesOfLdr].sort((a,b)=>b.wowAbs-a.wowAbs)[0];
     const bot = [...storesOfLdr].sort((a,b)=>a.wowAbs-b.wowAbs)[0];
     return `
     <div class="lob-wow-card">
@@ -797,25 +892,58 @@ function renderRankingWoW(data) {
     </div>`;
   }
 
-  // Top 12 for chart
-  const top12 = [...enriched].sort((a,b)=>b.w25Total-a.w25Total).slice(0,12);
+  // Zero-sales list per type
+  function zeroSalesSection() {
+    const types = ['a37','a57','s26'];
+    const names = { a37:'Galaxy A37', a57:'Galaxy A57', s26:'Galaxy S26' };
+    const colors= { a37:'#1428A0', a57:'#F59E0B', s26:'#8B5CF6' };
+    return types.map(type=>{
+      const zeros = allStores.filter(s=>(s[type]?.mtd||0)===0);
+      if (!zeros.length) return '';
+      return `
+      <div class="zero-sales-block">
+        <div class="zero-sales-type" style="color:${colors[type]}">${names[type]} — ${zeros.length} toko belum ada penjualan</div>
+        <div class="zero-sales-list">
+          ${zeros.map(s=>`<span class="zero-sales-item">${s.siteCode} <span class="zero-sales-name">${shortName(s.siteDesc)}</span></span>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  const top12 = [...enriched].sort((a,b)=>b.wowCurr-a.wowCurr).slice(0,12);
 
   el.innerHTML = `
+    <div class="wow-controls">
+      <div class="wow-filter-row">
+        <span class="wow-filter-label">BU / Organisasi:</span>
+        <div class="wow-bu-filters" id="wow-bu-filters">
+          <button class="filter-chip ${_wowBU==='all'?'active':''}" data-bu="all">Semua</button>
+          ${buList.map(bu=>`<button class="filter-chip ${_wowBU===bu?'active':''}" data-bu="${bu}">${bu}</button>`).join('')}
+        </div>
+      </div>
+      <div class="wow-filter-row">
+        <span class="wow-filter-label">Perbandingan WoW:</span>
+        <div class="wow-pair-filters" id="wow-pair-filters">
+          ${Object.entries(pairCfg).map(([k,v])=>`<button class="filter-chip ${_wowPair===k?'active':''}" data-pair="${k}">${v.label}</button>`).join('')}
+        </div>
+      </div>
+    </div>
+
     <div class="wow-top-grid">
       <div class="wow-panel wow-panel-green">
-        <div class="wow-panel-title">■ TOP 3 GROWER — ABSOLUT (${wl.w1})</div>
-        ${growers.map(s=>wowStoreCard(s,'#10B981')).join('')}
+        <div class="wow-panel-title">■ TOP 3 GROWER — ${pair.label}</div>
+        ${growers.length ? growers.map(s=>wowStoreCard(s,'#10B981')).join('') : '<div class="empty-state-sm">Tidak ada data</div>'}
       </div>
       <div class="wow-panel wow-panel-red">
-        <div class="wow-panel-title">■ BOTTOM 3 DECLINE</div>
-        ${declines.map(s=>wowStoreCard(s,'#EF4444')).join('')}
+        <div class="wow-panel-title">■ BOTTOM 3 DECLINE — ${pair.label}</div>
+        ${declines.filter(s=>s.wowAbs<0).length ? declines.filter(s=>s.wowAbs<0).map(s=>wowStoreCard(s,'#EF4444')).join('') : '<div class="empty-state-sm">Semua toko positif 👍</div>'}
       </div>
       <div class="wow-panel wow-panel-amber">
-        <div class="wow-panel-title">■ TOP 3 GROWTH % (min 2)</div>
+        <div class="wow-panel-title">■ TOP 3 GROWTH %</div>
         ${growPct.map(s=>`
         <div class="wow-store-item">
           <div class="wow-store-name">${shortName(s.siteDesc)}</div>
-          <div class="wow-store-sub">${s.leader}</div>
+          <div class="wow-store-sub">${s.leader} · ${s.bu||''}</div>
           <div class="wow-delta wow-pos">${s.wowPct>=0?'+':''}${(s.wowPct*100).toFixed(0)}%</div>
           <div class="wow-store-sub">${fmtWoW(s.wowAbs)} unit</div>
         </div>`).join('')}
@@ -826,34 +954,49 @@ function renderRankingWoW(data) {
         <div class="wow-store-item">
           <span class="wow-rank">${i+1}</span>
           <div class="wow-store-name">${shortName(s.siteDesc)}</div>
-          <div class="wow-store-sub">${s.siteCode} · ${s.leader}</div>
-          <div class="wow-delta wow-pos">${fmtN(getVUsed(s))} pcs</div>
+          <div class="wow-store-sub">${s.siteCode} · ${s.bu||''}</div>
+          <div class="wow-store-detail">V.W24:${fmtN(s.vW24Total||0)} W25:${fmtN(s.vW25Total||0)} W26:${fmtN(s.vW26Total||0)}</div>
+          <div class="wow-delta wow-pos">${fmtN(s.vUsed||0)} pcs total</div>
         </div>`).join('')}
       </div>
     </div>
 
     <div class="section-card">
       <div class="section-card-title">● Top &amp; Bottom per LOB</div>
-      <div class="lob-wow-grid">
-        ${leaders.map(lobWoWCard).join('')}
-      </div>
+      <div class="lob-wow-grid">${leaders.map(lobWoWCard).join('')}</div>
     </div>
 
     <div class="section-card">
-      <div class="section-card-title">WOW SELLOUT MOVEMENT — TOP 12 TOKO</div>
-      <div style="height:250px"><canvas id="chart-wow-top12"></canvas></div>
+      <div class="section-card-title">WOW MOVEMENT TOP 12 — ${pair.label}</div>
+      <div style="height:260px"><canvas id="chart-wow-top12"></canvas></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title">● Toko Belum Ada Penjualan (MTD = 0)</div>
+      <div class="zero-sales-wrap">${zeroSalesSection()||'<div class="empty-state-sm">Semua toko sudah ada penjualan 🎉</div>'}</div>
     </div>`;
+
+  // Wire filters
+  el.querySelectorAll('#wow-bu-filters .filter-chip').forEach(btn=>{
+    btn.addEventListener('click',()=>{ _wowBU=btn.dataset.bu; renderRankingWoW(data); });
+  });
+  el.querySelectorAll('#wow-pair-filters .filter-chip').forEach(btn=>{
+    btn.addEventListener('click',()=>{ _wowPair=btn.dataset.pair; renderRankingWoW(data); });
+  });
 
   requestAnimationFrame(()=>{
     const ctx = document.getElementById('chart-wow-top12');
     if (!ctx || !top12.length) return;
+    const prevLbl = pair.label.split(' → ')[0]||'Prev';
+    const currLbl = pair.label.split(' → ')[1]||'Curr';
+    destroyChart('wow-chart');
     _charts['wow-chart'] = new Chart(ctx,{
       type:'bar',
       data:{
         labels: top12.map(s=>shortName(s.siteDesc)),
         datasets:[
-          { label:'W-prev', data:top12.map(s=>s.w0Total), backgroundColor:'#94A3B8CC', borderRadius:3 },
-          { label:wl.w1,    data:top12.map(s=>s.w25Total), backgroundColor:'#00C2FFCC', borderRadius:3 },
+          { label:prevLbl, data:top12.map(s=>s.wowPrev), backgroundColor:'#94A3B8CC', borderRadius:3 },
+          { label:currLbl, data:top12.map(s=>s.wowCurr), backgroundColor:'#1428A0CC', borderRadius:3 },
         ],
       },
       options:chartOpts({scales:true,legend:true}),

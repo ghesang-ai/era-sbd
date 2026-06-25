@@ -6,7 +6,8 @@ const C = {
   BASELINE: 7, TARGET: 8, TARGET_WK: 9,
   MTD: 15,
   W24: 16, W25: 17, W26: 18, W27: 19,
-  PCT_MTD: 26,  // %MTD tracking indicator
+  V_KUOTA_W25: 22, V_KUOTA_W26: 23, V_KUOTA_W27: 24,
+  PCT_MTD: 26,
   V_TERSEDIA: 29, V_SISA: 30,
   V_W24: 31, V_W25: 32, V_W26: 33, V_W27: 34,
   EST: 35,      // AJ = Est. Sell Out (pre-calculated in Excel)
@@ -67,6 +68,9 @@ function parseProductSheet(wb, sheetName) {
       vW25: n(row[C.V_W25]),
       vW26: n(row[C.V_W26]),
       vW27: n(row[C.V_W27]),
+      vKuotaW25: n(row[C.V_KUOTA_W25]),
+      vKuotaW26: n(row[C.V_KUOTA_W26]),
+      vKuotaW27: n(row[C.V_KUOTA_W27]),
     };
   }
   return stores;
@@ -131,10 +135,13 @@ function parseExcel(arrayBuffer, filename) {
       vUsed,
       vTersedia,
       vSisa: vTersedia - vUsed,
-      vW24Total:   (a37.vW24 || 0) + (a57.vW24 || 0) + (s26.vW24 || 0),
-      vW25Total:   (a37.vW25 || 0) + (a57.vW25 || 0) + (s26.vW25 || 0),
-      vW26Total:   (a37.vW26 || 0) + (a57.vW26 || 0) + (s26.vW26 || 0),
-      vW27Total:   (a37.vW27 || 0) + (a57.vW27 || 0) + (s26.vW27 || 0),
+      vW24Total:      (a37.vW24 || 0) + (a57.vW24 || 0) + (s26.vW24 || 0),
+      vW25Total:      (a37.vW25 || 0) + (a57.vW25 || 0) + (s26.vW25 || 0),
+      vW26Total:      (a37.vW26 || 0) + (a57.vW26 || 0) + (s26.vW26 || 0),
+      vW27Total:      (a37.vW27 || 0) + (a57.vW27 || 0) + (s26.vW27 || 0),
+      vKuotaW25Total: (a37.vKuotaW25 || 0) + (a57.vKuotaW25 || 0) + (s26.vKuotaW25 || 0),
+      vKuotaW26Total: (a37.vKuotaW26 || 0) + (a57.vKuotaW26 || 0) + (s26.vKuotaW26 || 0),
+      vKuotaW27Total: (a37.vKuotaW27 || 0) + (a57.vKuotaW27 || 0) + (s26.vKuotaW27 || 0),
     });
   }
 
@@ -196,8 +203,18 @@ function parseExcel(arrayBuffer, filename) {
       acc.w26Total        += t.w26 || 0;
       acc.w27Total        += t.w27 || 0;
       acc.w0Total         += t.w0 || 0;
+      acc.vW24Total       += t.vW24 || 0;
+      acc.vW25Total       += t.vW25 || 0;
+      acc.vW26Total       += t.vW26 || 0;
+      acc.vW27Total       += t.vW27 || 0;
+      acc.vKuotaW25       += t.vKuotaW25 || 0;
+      acc.vKuotaW26       += t.vKuotaW26 || 0;
+      acc.vKuotaW27       += t.vKuotaW27 || 0;
       return acc;
-    }, { target:0, mtd:0, est:0, voucherTersedia:0, voucherPakai:0, w24Total:0, w25Total:0, w26Total:0, w27Total:0, w0Total:0 });
+    }, { target:0, mtd:0, est:0, voucherTersedia:0, voucherPakai:0,
+         w24Total:0, w25Total:0, w26Total:0, w27Total:0, w0Total:0,
+         vW24Total:0, vW25Total:0, vW26Total:0, vW27Total:0,
+         vKuotaW25:0, vKuotaW26:0, vKuotaW27:0 });
   }
 
   const fa37 = sumStoresType('a37');
@@ -254,7 +271,10 @@ function parseExcel(arrayBuffer, filename) {
 
 /* ─── Helpers for aggregation ─── */
 function zeroType() {
-  return { target:0, mtd:0, est:0, estPct:0, voucherTersedia:0, voucherPakai:0, voucher:0, w24:0, w25:0, w26:0, w27:0, w0:0 };
+  return { target:0, mtd:0, est:0, estPct:0, voucherTersedia:0, voucherPakai:0, voucher:0,
+           w24:0, w25:0, w26:0, w27:0, w0:0,
+           vW24:0, vW25:0, vW26:0, vW27:0,
+           vKuotaW25:0, vKuotaW26:0, vKuotaW27:0 };
 }
 
 function accumType(acc, t) {
@@ -269,6 +289,13 @@ function accumType(acc, t) {
   acc.w26             += t.w26 || 0;
   acc.w27             += t.w27 || 0;
   acc.w0              += t.w0 || 0;
+  acc.vW24            += t.vW24 || 0;
+  acc.vW25            += t.vW25 || 0;
+  acc.vW26            += t.vW26 || 0;
+  acc.vW27            += t.vW27 || 0;
+  acc.vKuotaW25       += t.vKuotaW25 || 0;
+  acc.vKuotaW26       += t.vKuotaW26 || 0;
+  acc.vKuotaW27       += t.vKuotaW27 || 0;
 }
 
 
